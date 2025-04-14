@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SKU Table Generator</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2>SKU Table Generator</h2>
+    <label>Enter SKUs (one per line):</label><br>
+    <textarea id="skuInput" rows="4" cols="50"></textarea><br><br>
+    
+    <label>Enter Class (only one value):</label><br>
+    <input type="text" id="classInput"><br><br>
+    
+    <label>Enter Names (one per line):</label><br>
+    <textarea id="nameInput" rows="4" cols="50"></textarea><br><br>
+    
+    <label>Enter Values (one per line):</label><br>
+    <textarea id="valueInput" rows="4" cols="50"></textarea><br><br>
+    
+    <button onclick="generateTable()">Generate Table</button>
+    <button onclick="copyToClipboard()">Copy to Clipboard</button>
+    
+    <h3>Generated Table:</h3>
+    <table id="outputTable">
+        <thead>
+            <tr>
+                <th>productSKU</th>
+                <th>type</th>
+                <th>name</th>
+                <th>class</th>
+                <th>group</th>
+                <th>owner</th>
+                <th>value</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const groupMapping = {
+            "Position": "Fitment",
+            "Lighting Technology": "Specifications",
+            "Lens Color": "Specifications",
+            "Housing Color": "Specifications",
+            "Color/Finish": "Specifications",
+            "Glass Adjustment Method": "Specifications",
+"California Proposition 65": "Compliance"
+        };
+
+        function generateTable() {
+            let skuLines = document.getElementById("skuInput").value.trim().split("\n");
+            let className = document.getElementById("classInput").value.trim();
+            let nameLines = document.getElementById("nameInput").value.trim().split("\n");
+            let valueLines = document.getElementById("valueInput").value.trim().split("\n");
+            
+            if (nameLines.length !== valueLines.length) {
+                alert("Error: Name and Value inputs must have the same number of entries.");
+                return;
+            }
+
+            let tbody = document.getElementById("outputTable").querySelector("tbody");
+            tbody.innerHTML = "";
+
+            skuLines.forEach(sku => {
+                nameLines.forEach((name, index) => {
+                    let value = valueLines[index];
+                    let type = (name === "Brand") ? "S" : "T";
+                    let group = groupMapping[name] || "";
+                    let owner = "No";
+                    
+                    let row = `<tr>
+                        <td>${sku}</td>
+                        <td>${type}</td>
+                        <td>${name}</td>
+                        <td>${className}</td>
+                        <td>${group}</td>
+                        <td>${owner}</td>
+                        <td>${value}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            });
+        }
+
+        function copyToClipboard() {
+            let table = document.getElementById("outputTable");
+            let rows = table.getElementsByTagName("tr");
+            let text = "";
+            
+            for (let i = 1; i < rows.length; i++) { // Skip header row
+                let cols = rows[i].getElementsByTagName("td");
+                let rowText = [];
+                for (let j = 0; j < cols.length; j++) {
+                    rowText.push(cols[j].innerText);
+                }
+                text += rowText.join("\t") + "\n"; // Tab-separated
+            }
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Copied to clipboard!");
+            });
+        }
+    </script>
+</body>
+</html>

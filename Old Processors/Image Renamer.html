@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag and Drop Image Renaming Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #AEADAD;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0 20px;
+            color: black;
+        }
+
+        #logo {
+            display: block;
+            margin: 0 auto 20px;
+            max-width: 650px;
+            resize: both;
+            overflow: hidden;
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 250px;
+            margin-right: 20px;
+        }
+
+        .input-section label {
+            font-weight: bold;
+        }
+
+        .input-section input {
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .buttons button {
+            padding: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .buttons #process-btn {
+            background-color: #F3A93A;
+        }
+
+        .buttons #download-btn {
+            background-color: #F3A93A;
+        }
+
+        #drop-area {
+            width: 100%;
+            height: 150px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9f9f9;
+            margin: 10px 0;
+            color: #777;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            resize: both;
+            overflow: auto;
+        }
+
+        #file-list {
+            width: 100%;
+            height: 200px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            overflow-y: auto;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            resize: both;
+            overflow: auto;
+        }
+
+        .row {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .file-item {
+            font-size: 0.9em;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img id="logo" src="C:\Users\PC 7\Downloads\Processors\Default KarParts360 LOGO Version 3 1.png" alt="Logo">
+        <h1>DRAG AND DROP IMAGE RENAMING TOOL</h1>
+
+        <div class="row">
+            <div class="input-section">
+                <label for="webteam-id">WEBTEAM UNIQUE ID:</label>
+                <input type="text" id="webteam-id" placeholder="Enter ID">
+
+                <label for="version-id">VERSION:</label>
+                <input type="text" id="version-id" placeholder="Enter Version">
+
+                <label for="specific-file-name">SPECIFIC FILE NAME:</label>
+                <input type="text" id="specific-file-name" placeholder="Enter Specific Name">
+
+                <div class="buttons">
+                    <button id="process-btn" disabled>PROCESS</button>
+                    <button id="download-btn" disabled>DOWNLOAD</button>
+                </div>
+            </div>
+
+            <div style="flex-grow: 1;">
+                <div id="drop-area">Drag and Drop your images here</div>
+                <div id="file-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropArea = document.getElementById('drop-area');
+        const fileList = document.getElementById('file-list');
+        const webteamIdInput = document.getElementById('webteam-id');
+        const versionIdInput = document.getElementById('version-id');
+        const specificFileNameInput = document.getElementById('specific-file-name');
+        const processBtn = document.getElementById('process-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        let uploadedFiles = [];
+        let renamedFiles = [];
+
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.style.borderColor = '#777';
+        });
+
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.style.borderColor = '#ccc';
+        });
+
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.style.borderColor = '#ccc';
+
+            const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+            uploadedFiles.push(...files);
+
+            files.forEach((file) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.textContent = `Uploaded: ${file.name}`;
+                fileList.appendChild(fileItem);
+            });
+
+            if (uploadedFiles.length > 0) {
+                processBtn.disabled = false;
+            }
+        });
+
+        processBtn.addEventListener('click', () => {
+            renamedFiles = [];
+            const webteamId = webteamIdInput.value.trim();
+            const versionId = versionIdInput.value.trim();
+            const specificFileName = specificFileNameInput.value.trim();
+
+            if (!webteamId) {
+                alert('Please provide a Webteam Unique ID before processing images.');
+                return;
+            }
+
+            uploadedFiles.forEach((file, index) => {
+                const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toUpperCase();
+                let versionPart = versionId ? `_${versionId}` : '';
+                let newFileName;
+
+                if (specificFileName && index === 0) {
+                    newFileName = `${webteamId}${specificFileName}${versionPart}${fileExtension}`;
+                } else if (index === 0) {
+                    newFileName = `${webteamId}_master${versionPart}${fileExtension}`;
+                } else {
+                    newFileName = `${webteamId}_${String(index + 1).padStart(2, '0')}${versionPart}${fileExtension}`;
+                }
+
+                renamedFiles.push({ originalFile: file, renamedFileName: newFileName });
+
+                const resultItem = document.createElement('div');
+                resultItem.className = 'file-item';
+                resultItem.textContent = `${file.name} → ${newFileName}`;
+                fileList.appendChild(resultItem);
+            });
+
+            downloadBtn.disabled = renamedFiles.length === 0;
+            processBtn.disabled = true;
+        });
+
+        downloadBtn.addEventListener('click', () => {
+    const webteamId = webteamIdInput.value.trim();
+
+    if (renamedFiles.length === 1) {
+        // Single image download with "Save As" dialog
+        const { originalFile, renamedFileName } = renamedFiles[0];
+        const blob = new Blob([originalFile], { type: originalFile.type });
+        saveAs(blob, renamedFileName); // Use FileSaver.js to trigger "Save As"
+    } else if (renamedFiles.length > 1) {
+        // Multiple images: Create a ZIP and trigger "Save As"
+        const zip = new JSZip();
+        const folder = zip.folder(webteamId) || zip;
+
+        renamedFiles.forEach(({ originalFile, renamedFileName }) => {
+            folder.file(renamedFileName, originalFile);
+        });
+
+        zip.generateAsync({ type: "blob" }).then((content) => {
+            saveAs(content, `${webteamId}.zip`); // Use FileSaver.js to save ZIP
+        });
+    } else {
+        alert('No files to download.');
+    }
+});
+    </script>
+</body>
+</html>
+s

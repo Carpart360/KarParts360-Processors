@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Data Filter</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <style>
+        body {
+            background-color: #B0B0B0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            padding: 20px;
+            text-align: center;
+        }
+        input, textarea, button {
+            padding: 5px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            border: 1px solid #333;
+        }
+        textarea {
+            width: 400px;
+            height: 120px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        button {
+            background-color: #de9b14;
+            color: black;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background-color: #c88c0d;
+            box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.3);
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Excel Data Filter Processor</h2>
+        <div class="form-group">
+            <label for="fileInput">Upload Excel File:</label>
+            <input type="file" id="fileInput" accept=".xlsx, .xls">
+        </div>
+        <div class="form-group">
+            <label for="dataInput">Input Data:</label>
+            <textarea id="dataInput" placeholder="Enter data in format: Year Range, Make, Model | Trim (optional) | Engine (optional) | Body (optional) | Drive Type (optional)"></textarea>
+        </div>
+        <button id="searchButton">Search</button>
+        <div id="copyButtons"></div>
+        <table id="resultTable" class="display">
+            <thead>
+                <tr></tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<script>
+    let jsonData;
+    let columns = [];
+
+    const validMakes = ["Suzuki", "Porsche", "Land Rover", "Subaru", "Alfa Romeo", "Jaguar", "Peugeot", "BMW", "Isuzu", "Morgan",
+            "Lamborghini", "Chrysler", "Dodge", "Jeep", "Checker", "Plymouth", "Laforza", "Kia", "Buick", "Cadillac",
+            "Chevrolet", "Rover", "GMC", "DeLorean", "Oldsmobile", "Pontiac", "Ford", "Lincoln", "Mercury", "Acura",
+            "Honda", "Mercedes-Benz", "AMC", "Nissan", "Avanti", "Hyundai", "Infiniti", "Bentley", "Rolls-Royce",
+            "International Harvester", "Volvo", "Audi", "Lexus", "Toyota", "Aston Martin", "Ferrari", "Maserati",
+            "Mazda", "Sterling", "Mitsubishi", "Volkswagen", "Saturn", "Panoz", "Allard", "Lancia", "Hummer", "Jensen",
+            "Facel Vega", "Maybach", "Studebaker", "Pegaso", "Reliant", "Tatra", "Citroën", "Nash", "Jowett", "Saab",
+            "Workhorse", "Bugatti", "DAF", "Freightliner", "Lotus", "Datsun", "Lanchester", "MG", "Geo", "Daihatsu",
+            "Fiat", "Renault", "Opel", "Lada", "Kaiser", "Alvis", "Armstrong-Siddeley", "Moretti", "Delahaye", "Triumph",
+            "Siata", "Berkeley", "Wolseley", "Glas", "Moskvich", "Maico", "Packard", "Humber", "Eagle", "Turner",
+            "Zundapp", "Bond", "Simca", "Singer", "Hudson", "Salmson", "Austin", "Goliath", "Skoda", "Daimler", "Morris",
+            "Bristol", "Riley", "Matra", "Hillman", "Fargo", "Sunbeam", "Abarth", "Deutsch-Bonnet", "DeSoto", "Ram",
+            "AC", "Metropolitan", "Shelby", "NSU", "DKW", "Willys", "Dual-Ghia", "Edsel", "Sabra", "Vauxhall", "TVR",
+            "Fairthorpe", "Frazer Nash", "Marathon", "Osca", "Alpine", "Peerless", "Borgward", "Wartburg", "Cisitalia",
+            "Crosley", "Healey", "Dellow", "Panhard", "Cunningham", "Mini", "Austin Healey", "Smart", "Mitsubishi Fuso",
+            "Mack", "Hino", "Scion", "UD", "SRT", "Iveco", "Sterling Truck", "Peterbilt", "Seat", "LaSalle", "Cord",
+            "American Bantam", "Kenworth", "Flxible Transit Bus", "Western Star", "American LaFrance", "Blue Bird",
+            "White", "Spartan Motors", "Dina Transit Bus", "Pierce Mfg. Inc.", "White/GMC", "Kalmar", "Ottawa",
+            "Roadmaster Rail", "Seagrave Fire Apparatus", "Duplex", "Indiana Phoenix", "Autocar", "Advance Mixer",
+            "Oshkosh Motor Truck Co.", "Autocar LLC.", "Crane Carrier", "FWD Corporation", "Van Hool", "Emergency One",
+            "Nova Bus Corporation", "Gillig", "Motor Coach Industries", "Prevost", "Crown Coach", "New Flyer",
+            "Transportation Mfg Corp.", "Terex / Terex Advance", "Ontario Bus", "El Dorado", "Orion Bus",
+            "Marmon Herrington", "Diamond Reo", "Neoplan", "Chance Coach Transit Bus", "Country Coach Motorhome", "Giant",
+            "Unimog", "Lodal", "Workhorse Custom Chassis", "Kovatch", "IC Corporation", "Thomas", "Eagle Transit Buses",
+            "Capacity Of Texas", "Caterpillar", "Maxwell", "Rickenbacker", "Rambler", "Jordan", "Hupmobile", "Auburn",
+            "Stutz", "Scripps Booth", "Duryea", "Blackhawk", "Gardner", "Elcar", "Jeffery", "Rockne", "Diana", "Marmon",
+            "Graham", "Pierce-Arrow", "Oakland", "Hendrickson", "Locomobile", "Case", "FWD", "Roamer", "Lexington",
+            "Franklin", "Davis", "Stearns Knight", "Star", "Isotta Fraschini", "Delage", "Haynes", "Hispano-Suiza",
+            "Talbot-Lago", "Reo", "Flint", "Velie", "Lagonda", "Durant", "Du Pont", "Moon", "Kissel", "Federal Motors",
+            "Evobus", "Genesis Transit Buses", "Stewart & Stevenson", "Tesla", "Sutphen Corp.", "McLaren", "VAM", "FAW",
+            "Dina", "Scania", "Foton", "MAN", "Giant Motors", "Daewoo", "Temsa Bus", "MASA", "Genesis", "Elva", "JAC",
+            "North American Bus Industries (NABI)", "Rivian", "Astra", "Fleetwood", "Nexus", "Leisure Travel",
+            "Country Coach", "Newmar", "Winnebago", "Holiday Rambler", "Itasca", "Gulf Stream", "Dynamax Corp",
+            "Forest River", "Thor Motor Coach", "Entegra Coach", "R-Vision", "Roadtrek", "Tiffin", "Renegade", "Coachmen",
+            "Phoenix", "Safari", "Brightdrop", "Iso", "Jayco", "Damon", "Monaco Coach", "Airstream", "American Coach",
+            "Coach House", "Spyker", "Lion", "Four Winds International", "Panoramic RV", "BYD", "East to West", "Ferrara",
+            "Pleasure-Way", "National RV", "Hymer", "GreenPower Motors", "Grande West", "AM General", "Chinook Motor Coach",
+            "Foretravel Motorhome", "Mobility Ventures", "VinFast", "Econoline", "Panther", "Proterra", "Lucid",
+            "Regency RV", "Changan", "Cupra", "BAIC", "De Tomaso", "JMC", "Excalibur", "Rosenbauer America", "Polestar",
+            "Monteverdi", "Hotchkiss", "Saleen", "Bizzarrini", "Bricklin", "Vespa", "Lloyd", "Lea-Francis", "Nardi",
+            "Toyopet", "Standard", "HRG", "Marauder", "Denzel", "Duesenberg", "Western RV", "Paige", "Stevens-Duryea",
+            "Windsor", "Westcott", "Essex", "Continental", "Utilimaster", "Zacua", "UAZ", "Chirey", "Xos", "Marcos",
+            "Alexander Dennis", "Henry J", "Arnolt-Bristol", "Goggomobil", "Bertone", "Messerschmitt", "Amphicar", "Omega",
+            "Darrin", "Griffith", "Coda", "Asuna", "Fisker", "Bus & Coach Intl (BCI)", "Chandler", "Yellow Cab",
+            "Graham-Paige", "Rollin", "Biddle", "Jewett", "Erskine", "Stanguellini", "Koenigsegg", "Merkur", "Karma",
+            "VPG", "Chanje", "Qvale", "Frazer", "Arnolt-MG", "Gordon-Keeble", "Mastretta", "American Austin", "Bering",
+            "Whippet", "Falcon Knight", "Hertz", "HCS", "Think", "Savage", "Kimble Chassis", "Yugo", "Hansa", "Swallow",
+            "Kurtis", "Cleveland", "Sheridan", "Cole", "Les Autobus MCI", "Ariel", "Apollo", "Apperson", "Viking",
+            "Maxim", "Evergreen RV", "Allstate", "Carado", "Roosevelt", "Lordstown Motors", "Irizar", "Dennis Eagle",
+            "SsangYong", "Tucker", "Doretti", "Marquette", "Zeligson", "De Vaux", "Navistar"]; // Add valid makes
+
+    function sanitizeColumnNames(colNames) {
+        return colNames.map(name => name.replace(/[|^]/g, ''));
+    }
+
+    function createTableHeaders() {
+        const tableHeaders = columns.map(col => `<th>${col}</th>`).join('');
+        $('#resultTable thead tr').html(tableHeaders);
+    }
+
+    function extractMakeAndModel(yearMakeModel) {
+        const [yearRange, ...makeAndModelParts] = yearMakeModel.split(' ');
+        let make = '';
+        let model = '';
+
+        for (let i = 1; i <= makeAndModelParts.length; i++) {
+            const possibleMake = makeAndModelParts.slice(0, i).join(' ');
+            if (validMakes.includes(possibleMake)) {
+                make = possibleMake;
+                model = makeAndModelParts.slice(i).join(' ');
+                break;
+            }
+        }
+
+        return { yearRange, make, model };
+    }
+
+    function filterData() {
+        const dataInput = document.getElementById('dataInput').value.trim();
+        if (!dataInput) {
+            alert('Please enter the data.');
+            return [];
+        }
+
+        const lines = dataInput.split('\n').map(line => line.trim());
+        let allFilteredData = [];
+        let invalidEntries = [];
+
+        lines.forEach((line, index) => {
+            const parts = line.split('\t');
+            const yearMakeModel = parts[0];
+            const trim = parts[1] || ''; 
+            const engine = parts[2] || ''; 
+            const body = parts[3] || ''; 
+            const driveType = parts[4] || ''; 
+            const { yearRange, make, model } = extractMakeAndModel(yearMakeModel);
+
+            if (!make || !model) {
+                invalidEntries.push(`Line ${index + 1}: ${line}`);
+                return;
+            }
+
+            let yearStart, yearEnd;
+            if (yearRange.includes('-')) {
+                [yearStart, yearEnd] = yearRange.split('-').map(year => parseInt(year.trim()));
+            } else {
+                yearStart = yearEnd = parseInt(yearRange.trim());
+            }
+
+            const filteredData = jsonData.filter(row => {
+                const rowYear = row['Year'] ? parseInt(row['Year']) : '';
+                const rowMake = row['Make'] ? row['Make'].toLowerCase() : '';
+                const rowModel = row['Model'] ? row['Model'].toLowerCase() : '';
+                const rowTrim = row['Trim'] ? row['Trim'].toLowerCase() : '';
+                const rowEngine = row['Engine'] ? row['Engine'].toLowerCase() : '';
+                const rowBody = row['Body'] ? row['Body'].toLowerCase() : '';
+                const rowDriveType = row['Drive Type'] ? row['Drive Type'].toLowerCase() : '';
+
+                const modelMatch = rowModel === model.toLowerCase();
+                const trimMatch = trim
+                    ? rowTrim === trim.toLowerCase() || rowTrim.startsWith(trim.toLowerCase() + ' ' + rowBody)
+                    : true;
+
+                const engineTerms = engine.split('|').map(e => e.toLowerCase().trim());
+                const engineMatch = engineTerms.every(term => rowEngine.includes(term));
+
+                const bodyMatch = body ? rowBody === body.toLowerCase() : true;
+                const driveTypeMatch = driveType ? rowDriveType.includes(driveType.toLowerCase()) : true;
+
+                return rowYear >= yearStart && rowYear <= yearEnd &&
+                    rowMake.includes(make.toLowerCase()) &&
+                    modelMatch &&
+                    trimMatch &&
+                    engineMatch &&
+                    bodyMatch &&
+                    driveTypeMatch;
+            });
+
+            if (filteredData.length === 0) {
+                invalidEntries.push(`Invalid Input Entry: ${line}`);
+            }
+
+            allFilteredData = allFilteredData.concat(filteredData);
+        });
+
+        if (invalidEntries.length > 0) {
+            alert(`Invalid entries found:\n${invalidEntries.join('\n')}`);
+        } else {
+            alert("Filtering process completed!");
+        }
+
+        return allFilteredData;
+    }
+    function createCopyButtons() {
+        const copyButtonsDiv = document.getElementById('copyButtons');
+        copyButtonsDiv.innerHTML = '';
+
+        columns.forEach(col => {
+            const button = document.createElement('button');
+            button.textContent = `Copy ${col}`;
+            button.addEventListener('click', () => copyColumnData(col));
+            copyButtonsDiv.appendChild(button);
+        });
+    }
+
+    function copyColumnData(columnName) {
+        const columnIndex = columns.indexOf(columnName);
+        if (columnIndex === -1) {
+            alert(`Column "${columnName}" not found.`);
+            return;
+        }
+        const table = $('#resultTable').DataTable();
+        const data = table.column(columnIndex).data().toArray().join('\n');
+        navigator.clipboard.writeText(data).then(() => {
+            alert(`Data from column "${columnName}" copied to clipboard.`);
+        }).catch(() => {
+            alert('Failed to copy data to clipboard.');
+        });
+    }
+
+    function saveFileToIndexedDB(file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            jsonData = XLSX.utils.sheet_to_json(sheet);
+
+            columns = Object.keys(jsonData[0]);
+            createTableHeaders();
+            createCopyButtons();
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (!file) {
+            alert('Please upload an Excel file.');
+            return;
+        }
+        saveFileToIndexedDB(file);
+    });
+
+    document.getElementById('searchButton').addEventListener('click', function() {
+        if (!jsonData) {
+            alert('Please upload an Excel file.');
+            return;
+        }
+
+        const filteredData = filterData();
+
+        if ($.fn.dataTable.isDataTable('#resultTable')) {
+            $('#resultTable').DataTable().clear().destroy();
+        }
+
+        $('#resultTable').DataTable({
+            data: filteredData,
+            columns: columns.map(col => ({ title: col, data: col }))
+        });
+    });
+</script>
+</body>
+</html>

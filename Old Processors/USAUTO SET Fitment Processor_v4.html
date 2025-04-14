@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USAUTO SET Fitment Processor</title>
+    <style>
+        body {
+            background-color: #B0B0B0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #D3D3D3;
+            border-radius: 10px;
+        }
+        .logo {
+            display: block;
+            margin: 0 auto 20px auto;
+            max-width: 100%;
+            height: auto;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #de9b14;
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            border-radius: 5px;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="C:\Users\USER\Downloads\Logo.png" alt="Logo" class="logo">
+        <textarea id="inputArea" placeholder="Enter fitment data here..."></textarea>
+        <button id="processButton">Process</button>
+        <button id="reprocessButton" disabled>Reprocess</button>
+        <button id="copyButton" disabled>Copy to Clipboard</button>
+        <textarea id="resultArea" placeholder="Processed fitments will appear here..." readonly></textarea>
+    </div>
+
+    <script>
+        const makesList = [
+                        "Suzuki", "Porsche", "Land Rover", "Subaru", "Alfa Romeo", "Jaguar", "Peugeot", "BMW", "Isuzu", "Morgan",
+            "Lamborghini", "Chrysler", "Dodge", "Jeep", "Checker", "Plymouth", "Laforza", "Kia", "Buick", "Cadillac",
+            "Chevrolet", "Rover", "GMC", "DeLorean", "Oldsmobile", "Pontiac", "Ford", "Lincoln", "Mercury", "Acura",
+            "Honda", "Mercedes-Benz", "AMC", "Nissan", "Avanti", "Hyundai", "Infiniti", "Bentley", "Rolls-Royce",
+            "International Harvester", "Volvo", "Audi", "Lexus", "Toyota", "Aston Martin", "Ferrari", "Maserati",
+            "Mazda", "Sterling", "Mitsubishi", "Volkswagen", "Saturn", "Panoz", "Allard", "Lancia", "Hummer", "Jensen",
+            "Facel Vega", "Maybach", "Studebaker", "Pegaso", "Reliant", "Tatra", "Citroën", "Nash", "Jowett", "Saab",
+            "Workhorse", "Bugatti", "DAF", "Freightliner", "Lotus", "Datsun", "Lanchester", "MG", "Geo", "Daihatsu",
+            "Fiat", "Renault", "Opel", "Lada", "Kaiser", "Alvis", "Armstrong-Siddeley", "Moretti", "Delahaye", "Triumph",
+            "Siata", "Berkeley", "Wolseley", "Glas", "Moskvich", "Maico", "Packard", "Humber", "Eagle", "Turner",
+            "Zundapp", "Bond", "Simca", "Singer", "Hudson", "Salmson", "Austin", "Goliath", "Skoda", "Daimler", "Morris",
+            "Bristol", "Riley", "Matra", "Hillman", "Fargo", "Sunbeam", "Abarth", "Deutsch-Bonnet", "DeSoto", "Ram",
+            "AC", "Metropolitan", "Shelby", "NSU", "DKW", "Willys", "Dual-Ghia", "Edsel", "Sabra", "Vauxhall", "TVR",
+            "Fairthorpe", "Frazer Nash", "Marathon", "Osca", "Alpine", "Peerless", "Borgward", "Wartburg", "Cisitalia",
+            "Crosley", "Healey", "Dellow", "Panhard", "Cunningham", "Mini", "Austin Healey", "Smart", "Mitsubishi Fuso",
+            "Mack", "Hino", "Scion", "UD", "SRT", "Iveco", "Sterling Truck", "Peterbilt", "Seat", "LaSalle", "Cord",
+            "American Bantam", "Kenworth", "Flxible Transit Bus", "Western Star", "American LaFrance", "Blue Bird",
+            "White", "Spartan Motors", "Dina Transit Bus", "Pierce Mfg. Inc.", "White/GMC", "Kalmar", "Ottawa",
+            "Roadmaster Rail", "Seagrave Fire Apparatus", "Duplex", "Indiana Phoenix", "Autocar", "Advance Mixer",
+            "Oshkosh Motor Truck Co.", "Autocar LLC.", "Crane Carrier", "FWD Corporation", "Van Hool", "Emergency One",
+            "Nova Bus Corporation", "Gillig", "Motor Coach Industries", "Prevost", "Crown Coach", "New Flyer",
+            "Transportation Mfg Corp.", "Terex / Terex Advance", "Ontario Bus", "El Dorado", "Orion Bus",
+            "Marmon Herrington", "Diamond Reo", "Neoplan", "Chance Coach Transit Bus", "Country Coach Motorhome", "Giant",
+            "Unimog", "Lodal", "Workhorse Custom Chassis", "Kovatch", "IC Corporation", "Thomas", "Eagle Transit Buses",
+            "Capacity Of Texas", "Caterpillar", "Maxwell", "Rickenbacker", "Rambler", "Jordan", "Hupmobile", "Auburn",
+            "Stutz", "Scripps Booth", "Duryea", "Blackhawk", "Gardner", "Elcar", "Jeffery", "Rockne", "Diana", "Marmon",
+            "Graham", "Pierce-Arrow", "Oakland", "Hendrickson", "Locomobile", "Case", "FWD", "Roamer", "Lexington",
+            "Franklin", "Davis", "Stearns Knight", "Star", "Isotta Fraschini", "Delage", "Haynes", "Hispano-Suiza",
+            "Talbot-Lago", "Reo", "Flint", "Velie", "Lagonda", "Durant", "Du Pont", "Moon", "Kissel", "Federal Motors",
+            "Evobus", "Genesis Transit Buses", "Stewart & Stevenson", "Tesla", "Sutphen Corp.", "McLaren", "VAM", "FAW",
+            "Dina", "Scania", "Foton", "MAN", "Giant Motors", "Daewoo", "Temsa Bus", "MASA", "Genesis", "Elva", "JAC",
+            "North American Bus Industries (NABI)", "Rivian", "Astra", "Fleetwood", "Nexus", "Leisure Travel",
+            "Country Coach", "Newmar", "Winnebago", "Holiday Rambler", "Itasca", "Gulf Stream", "Dynamax Corp",
+            "Forest River", "Thor Motor Coach", "Entegra Coach", "R-Vision", "Roadtrek", "Tiffin", "Renegade", "Coachmen",
+            "Phoenix", "Safari", "Brightdrop", "Iso", "Jayco", "Damon", "Monaco Coach", "Airstream", "American Coach",
+            "Coach House", "Spyker", "Lion", "Four Winds International", "Panoramic RV", "BYD", "East to West", "Ferrara",
+            "Pleasure-Way", "National RV", "Hymer", "GreenPower Motors", "Grande West", "AM General", "Chinook Motor Coach",
+            "Foretravel Motorhome", "Mobility Ventures", "VinFast", "Econoline", "Panther", "Proterra", "Lucid",
+            "Regency RV", "Changan", "Cupra", "BAIC", "De Tomaso", "JMC", "Excalibur", "Rosenbauer America", "Polestar",
+            "Monteverdi", "Hotchkiss", "Saleen", "Bizzarrini", "Bricklin", "Vespa", "Lloyd", "Lea-Francis", "Nardi",
+            "Toyopet", "Standard", "HRG", "Marauder", "Denzel", "Duesenberg", "Western RV", "Paige", "Stevens-Duryea",
+            "Windsor", "Westcott", "Essex", "Continental", "Utilimaster", "Zacua", "UAZ", "Chirey", "Xos", "Marcos",
+            "Alexander Dennis", "Henry J", "Arnolt-Bristol", "Goggomobil", "Bertone", "Messerschmitt", "Amphicar", "Omega",
+            "Darrin", "Griffith", "Coda", "Asuna", "Fisker", "Bus & Coach Intl (BCI)", "Chandler", "Yellow Cab",
+            "Graham-Paige", "Rollin", "Biddle", "Jewett", "Erskine", "Stanguellini", "Koenigsegg", "Merkur", "Karma",
+            "VPG", "Chanje", "Qvale", "Frazer", "Arnolt-MG", "Gordon-Keeble", "Mastretta", "American Austin", "Bering",
+            "Whippet", "Falcon Knight", "Hertz", "HCS", "Think", "Savage", "Kimble Chassis", "Yugo", "Hansa", "Swallow",
+            "Kurtis", "Cleveland", "Sheridan", "Cole", "Les Autobus MCI", "Ariel", "Apollo", "Apperson", "Viking",
+            "Maxim", "Evergreen RV", "Allstate", "Carado", "Roosevelt", "Lordstown Motors", "Irizar", "Dennis Eagle",
+            "SsangYong", "Tucker", "Doretti", "Marquette", "Zeligson", "De Vaux", "Navistar" // put makes here
+        ];
+
+        const excludedModels = [
+                "Navistar|9300", "Navistar|9400", "Navistar|7100", "Kenworth|C500", "Kenworth|W900",
+    "Peterbilt|378", "Peterbilt|379", "Kenworth|K100E", "Freightliner|Century Class",
+    "Freightliner|Classic XL", "Navistar|2554", "Ford|CT8000", "Navistar|S1954",
+    "Ford|LN9000", "Ford|LNT9000", "Ford|LT9000", "Ford|LTS9000", "Ford|FT800",
+    "Ford|CF8000", "Ford|L8000F", "Ford|LN8000", "Ford|LS9000", "Ford|CFT8000",
+    "Ford|L9000", "Navistar|8300", "Blue Bird|TC2000", "Navistar|2574", "Navistar|2654",
+    "Navistar|3700", "Navistar|3800", "Navistar|4600", "Navistar|4700", "Navistar|4900",
+    "Navistar|8100", "Navistar|4800", "Navistar|8200", "Thomas|Saf-T-Liner", "Freightliner|FL70",
+    "Freightliner|FL80", "Freightliner|MB70", "Freightliner|FL106", "Navistar|2674",
+    "Blue Bird|All American FE", "Freightliner|Columbia", "Navistar|4300", "Navistar|4200",
+    "Autocar LLC.|Xpeditor WX", "Freightliner|M2 106", "Hino|238", "Hino|268", "Hino|338",
+    "Hino|258", "Hino|258LP", "Hino|268A", "Navistar|9600", "Navistar|9700",
+    "Chevrolet|C70 Kodiak", "Chevrolet|C7500 Kodiak", "Chevrolet|T6500", "Chevrolet|T7500",
+    "GMC|C7500 Topkick", "Isuzu|FTR", "Isuzu|FVR", "Isuzu|HTR", "Isuzu|HVR", "Isuzu|FXR",
+    "Navistar|5070", "International|WorkStar 7700", "International|WorkStar 7600",
+    "Navistar|ProStar", "Freightliner|108SD", "Freightliner|Classic", "Freightliner|Coronado",
+    "Freightliner|Condor", "Freightliner|Cascadia", "Freightliner|Argosy", "Freightliner|122SD",
+    "Freightliner|FB65", "Freightliner|114SD", "Freightliner|B2", "Freightliner|FLD112",
+    "Freightliner|FLC112", "Freightliner|FL50", "Freightliner|FLT086", "Freightliner|FLC120",
+    "Freightliner|XC", "Freightliner|M2 112", "Freightliner|M2 100", "Freightliner|XB Line",
+    "Freightliner|FLD120", "Freightliner|XC Lowered Rail", "Freightliner|MT45", "Freightliner|XC Straight Rail",
+    "Freightliner|XC Modular Rail", "Freightliner|XC Raised Rail", "Freightliner|XC Formed Rail",
+    "Freightliner|XB Straight Rail", "Freightliner|MT55", "Freightliner|Sprinter 3500",
+    "Freightliner|FL112", "Freightliner|FL60", "Freightliner|FLD120SD", "Freightliner|FLD132",
+    "Freightliner|MB Line", "Freightliner|Sport Chassis", "Freightliner|S2", "Freightliner|FLA086",
+    "Freightliner|M2", "Freightliner|FLB", "Freightliner|FLL086", "Freightliner|FL360",
+    "Freightliner|FS65", "Freightliner|S2G", "Freightliner|S2C", "Freightliner|EB2",
+    "Freightliner|FC70", "Freightliner|Business Class M2", "Freightliner|MT35", "Freightliner|S2RV",
+    "Freightliner|Sprinter 3500XD", "Freightliner|Sprinter 4500", "Freightliner|FC80",
+    "Freightliner|XBA", "Freightliner|MC Line", "Freightliner|eCascadia", "Freightliner|EconicSD",
+    "Freightliner|XB Raised Rail", "Freightliner|V Line", "Freightliner|MB60", "Freightliner|M2 T",
+    "Freightliner|XBA ARBOC", "Freightliner|Sprinter 2500", "Freightliner|MCL", "Kenworth|T300",
+    "Kenworth|T270", "Kenworth|T370", "Kenworth|K300", "Kenworth|T600A", "Kenworth|K100",
+    "Kenworth|T400", "Kenworth|T800", "Kenworth|T680", "Kenworth|T660", "Kenworth|T2000",
+    "Kenworth|T450", "Kenworth|L700", "Kenworth|C550", "Kenworth|T880", "Kenworth|548CH",
+    "Kenworth|K270", "Kenworth|W990", "Kenworth|T170", "Kenworth|T280", "Kenworth|KW55",
+    "Kenworth|KW45", "Kenworth|K150", "Kenworth|13-210", "Kenworth|T700", "Kenworth|K370",
+    "Kenworth|T380", "Kenworth|T480", "Kenworth|T460", "Kenworth|K220", "Kenworth|C540",
+    "Kenworth|22-210", "Kenworth|K130", "Kenworth|T180", "Kenworth|K200", "Flxible Transit Bus|Metro 30",
+    "Blue Bird|Commercial Bus", "Dina Transit Bus|Viaggio 1000", "Van Hool|T900", "Nova Bus Corporation|T806",
+    "Gillig|City Suburban", "Blue Bird|SHL TC2000", "Motor Coach Industries|102DL3", "Gillig|Low Floor",
+    "Prevost|Marathon", "Crown Coach|School Bus", "New Flyer|C40", "Blue Bird|Vision School Bus",
+    "Transportation Mfg Corp.|T706", "Transportation Mfg Corp.|T802", "Van Hool|C2045", "Prevost|Le Mirage",
+    "Ontario Bus|Orion V", "Prevost|Shell", "El Dorado|Axess", "Motor Coach Industries|F3500",
+    "Crane Carrier|School Bus", "Orion Bus|Orion V", "El Dorado|Escort RE", "New Flyer|D45HF",
+    "Nova Bus Corporation|T606", "Motor Coach Industries|MC-12", "Gillig|City Transit", "New Flyer|D35",
+    "Prevost|High Decker", "New Flyer|D40LF", "Neoplan|Advanced DSN", "Chance Coach Transit Bus|Street Car",
+    "Prevost|Prestige", "Ontario Bus|Orion I", "Van Hool|T2100", "Flxible Transit Bus|Metro 40",
+    "Chance Coach Transit Bus|CNG-28", "Motor Coach Industries|102C3", "Motor Coach Industries|D4005",
+    "Oshkosh Motor Truck Co.|M Line", "Van Hool|T815", "Ontario Bus|Orion VI", "Blue Bird|TC1000",
+    "Orion Bus|Orion VII", "Oshkosh Motor Truck Co.|V Line", "New Flyer|D60", "Van Hool|T800",
+    "Motor Coach Industries|102D3", "New Flyer|D30LF", "El Dorado|E-Z Rider", "Nova Bus Corporation|T602",
+    "Motor Coach Industries|102GL3", "El Dorado|E-Z Rider II Max", "IC Corporation|BE School Bus",
+    "Thomas|School Bus", "Eagle Transit Buses|Eagle 10", "Eagle Transit Buses|Eagle 20", "Thomas|Transit Liner",
+    "Ontario Bus|Orion II", "Motor Coach Industries|96A3", "Flxible Transit Bus|Metro 35", "IC Corporation|HC Integrated Commercial",
+    "Eagle Transit Buses|Eagle 45", "Thomas|Bus", "Transportation Mfg Corp.|102C3", "Chevrolet|B7",
+    "Chevrolet|B60", "Ford|B-600", "GMC|B6000", "Blue Bird|All American RE", "International Harvester|3200",
+    "Ford|B-700", "Hendrickson|FC", "International Harvester|3800", "IC Corporation|RE Commercial",
+    "IC Corporation|CE School Bus", "IC Corporation|FE Commercial", "IC Corporation|CE Integrated",
+    "IC Corporation|RE School Bus", "Motor Coach Industries|MC-9", "IC Corporation|CE Commercial",
+    "IC Corporation|3000 IC", "IC Corporation|AE School Bus", "Eagle Transit Buses|Eagle 15",
+    "Evobus|S 417", "Genesis Transit Buses|Genesis", "Stewart & Stevenson|T30", "Chevrolet|S7",
+    "Ford|B-800F", "Spartan Motors|BC2000", "Spartan Motors|BC", "New Flyer|D40", "GMC|B7",
+    "GMC|P6000", "El Dorado|Transmark XHF", "Motor Coach Industries|102A2", "Transportation Mfg Corp.|T702",
+    "Transportation Mfg Corp.|96A3", "Dina|Runner", "Dina|Ridder", "International Harvester|4700",
+    "Scania|K360", "Dina|Linner", "Scania|K440", "Mercedes-Benz|Boxer 60", "Scania|K310",
+    "Volkswagen|Volksbus", "Volvo|ProCity", "Mercedes-Benz|Gran Viale LE", "Hyundai|H500", "Volvo|9800",
+    "New Flyer|Xcelsior", "Mercedes-Benz|Viaggio 900", "Mercedes-Benz|Viaggio 1050", "Temsa Bus|TS35",
+    "Mercedes-Benz|Torino", "Mercedes-Benz|Paradiso 1800", "Scania|K320", "Volvo|7300 BRT", "Scania|K400",
+    "Volvo|B11R", "MASA|SmartBus", "Mercedes-Benz|Boxer OF", "Mercedes-Benz|Safety Bus", "Mercedes-Benz|OC 500",
+    "Mercedes-Benz|Boxer 50", "Mercedes-Benz|Boxer 40", "Motor Coach Industries|J4500", "Scania|SERIE K",
+    "North American Bus Industries (NABI)|40 Foot", "International Harvester|UrbanStar", "Van Hool|Commuter Coach CX",
+    "Nova Bus Corporation|Low Floor 40", "Mercedes-Benz|LO 916", "Lion|LionC", "Motor Coach Industries|J3500",
+    "BYD|35FT", "Volvo|9700", "Prevost|X3 Coach", "Isuzu|ELF 600-BUS", "Volvo|B13R", "Scania|K280",
+    "Mercedes-Benz|MBO 14000", "Grande West|38 Foot", "Mercedes-Benz|Andare", "Prevost|XL2", "Volvo|B8RLE",
+    "Mercedes-Benz|O500", "Van Hool|Tourist Coach TX", "Proterra|35 Foot", "International Harvester|3600",
+    "International Harvester|3000", "Mercedes-Benz|OH 1624", "Scania|K250", "Mercedes-Benz|OMC 1400",
+    "International Harvester|3900FC", "Volvo|Access", "Scania|K450", "Mercedes-Benz|MBO 12000",
+    "Mercedes-Benz|S 417", "Mercedes-Benz|MBO 1018", "Volvo|B8R", "Dina|Brighter", "Mercedes-Benz|OH 1524",
+    "Volvo|BZL", "El Dorado|Transmark RE", "New Flyer|C40LF", "Van Hool|TD925", "Evobus|S 215 HDH",
+    "Oshkosh Motor Truck Co.|S Line", "Orion Bus|Orion VI", "Motor Coach Industries|102B3", "Nova Bus Corporation|T702",
+    "Orion Bus|Orion II", "El Dorado|E-Z Rider II", "New Flyer|D60LF", "Gillig|School Bus", "Motor Coach Industries|102A3",
+    "Neoplan|Cityliner", "Neoplan|Jetliner", "IC Corporation|AC Commercial Bus", "Transportation Mfg Corp.|T806",
+    "Transportation Mfg Corp.|102A3", "Hendrickson|RE", "International Harvester|3000RE", "Ford|B-7000",
+    "Spartan Motors|Bus Chassis", "Motor Coach Industries|102AW3", "International Harvester|3100",
+    "Foton|AUV Bus", "Volvo|9700 Grand", "MAN|RR2", "MAN|RR4", "Mercedes-Benz|Paradiso 1350", "Grande West|27 Foot",
+    "Grande West|33 Foot", "Mercedes-Benz|Paradiso 1200", "Temsa Bus|TS45", "Mercedes-Benz|Gran Viale RF",
+    "Mercedes-Benz|Allegro", "Mercedes-Benz|Multego", "Motor Coach Industries|D4505", "Mercedes-Benz|OF 1118",
+    "Scania|SERIE F", "Grande West|35 Foot", "Alexander Dennis|Enviro200", "BYD|40FT", "GreenPower Motors|EVC210",
+    "Hino|500", "Grande West|30 Foot", "Prevost|Entertainer", "Nova Bus Corporation|Classic 40", "Blue Bird|SHL Commercial",
+    "Nova Bus Corporation|T802", "Nova Bus Corporation|T706", "Motor Coach Industries|102EL3", "Nova Bus Corporation|RTS",
+    "New Flyer|D35LF", "Gillig|Shuttle Bus", "Workhorse Custom Chassis|R20", "Bus & Coach Intl (BCI)|Falcon 45",
+    "Stewart & Stevenson|H40", "Stewart & Stevenson|H30", "IC Corporation|AR School Bus", "Spartan Motors|EXP-2001",
+    "Mercedes-Benz|Toreto 48", "Volvo|B410R", "Proterra|40 Foot", "Mercedes-Benz|Gran Viale Articulado",
+    "North American Bus Industries (NABI)|416", "Mercedes-Benz|OF 1321", "Van Hool|TDX Double Decker Coach",
+    "North American Bus Industries (NABI)|436", "Temsa Bus|TS30", "Alexander Dennis|Enviro500", "Mercedes-Benz|OH 1500",
+    "North American Bus Industries (NABI)|35 Foot", "BYD|60FT", "Mercedes-Benz|OH 1625", "International Harvester|3000IC",
+    "Mercedes-Benz|FS65", "Mercedes-Benz|Alliado", "International Harvester|3400", "Chance Coach Transit Bus|AH-28",
+    "New Flyer|C30LF", "Van Hool|Urban Bus", "IC Corporation|RE Integrated", "IC Corporation|3000 Chassis",
+    "Transportation Mfg Corp.|MC-9", "Transportation Mfg Corp.|96A2", "International Harvester|3700",
+    "IC Corporation|FE School Bus", "IC Corporation|FE Integrated", "Chance Coach Transit Bus|Sunliner-COACH",
+    "Chance Coach Transit Bus|AMTV-TM", "GMC|Transit Bus", "Volvo|8300", "Scania|K410", "International Harvester|SC",
+    "Volkswagen|Robust", "Mercedes-Benz|OH 1518", "Mercedes-Benz|LO 915", "Mercedes-Benz|Toreto 45",
+    "International Harvester|Genesis RE", "Mercedes-Benz|MBO 1221", "Mercedes-Benz|Marco Polo", "New Flyer|L35LF",
+    "Van Hool|T809", "Nova Bus Corporation|LFS 60", "Eagle Transit Buses|Eagle 15S", "IC Corporation|3800",
+    "Flxible Transit Bus|870", "IC Corporation|3300 Chassis", "Les Autobus MCI|Classic", "BYD|30FT",
+    "Hendrickson|Dockmaster", "Dina|Outsider", "Mercedes-Benz|OF 1318", "GreenPower Motors|EV250",
+    "Mercedes-Benz|OH 1600", "Mercedes-Benz|Citaro", "Van Hool|T915", "New Flyer|C35LF", "Genesis Transit Buses|Genesis RE",
+    "Neoplan|Spaceliner", "IC Corporation|3200", "Dina|Buller", "Mercedes-Benz|Viale BRT", "Scania|K490",
+    "Mercedes-Benz|MBO 1218", "Alexander Dennis|Enviro500 SuperLo", "Mercedes-Benz|MBO 1421", "International Harvester|3300",
+    "MAN|TGX", "Chance Coach Transit Bus|Power Tram", "Chance Coach Transit Bus|RT-52", "International Harvester|Traveler",
+    "Volvo|Hibrido", "Mercedes-Benz|OMC 1600", "Mercedes-Benz|O400", "Chance Coach Transit Bus|AMTV-PM", "New Flyer|L40",
+    "Motor Coach Industries|96B3", "Eagle Transit Buses|Eagle 35", "Volvo|B290R", "Mercedes-Benz|Tres Ejes",
+    "Mercedes-Benz|Zafiro 1040 GT", "Mercedes-Benz|Coraza S2", "Thomas|Saf-T-Liner C2 Jouley", "Irizar|I6",
+    "Chance Coach Transit Bus|AMTV-COACH", "Evobus|S 407", "Hino|BF918G", "Mercedes-Benz|Gran Viale", "Alexander Dennis|Enviro400",
+    "Dina|Picker", "GreenPower Motors|EV350", "International Harvester|3000FE", "Hino|BF1524M", "Hino|BR1425S",
+    "Hino|BF918K", "Scania|K460", "GreenPower Motors|EVS300", "FAW|GF5000", "IC Corporation|BE Commercial Bus",
+    "Neoplan|Skyliner", "Mercedes-Benz|Busstar 380", "Hendrickson|H", "Blue Bird|SHL All American", "Prevost|Champion",
+    "Volvo|7900", "Volvo|ALD Enviro500", "Genesis Transit Buses|3000 FE", "Mercedes-Benz|OH 1621", "Spartan Motors|BV",
+    "Hyundai|HD78", "Blue Bird|Wanderlodge", "Mercedes-Benz|MP60 Express", "Peterbilt|330", "Peterbilt|270",
+    "Peterbilt|335", "Peterbilt|200", "Peterbilt|357", "Peterbilt|365", "Sterling Truck|LT9500", "Mack|RD",
+    "Sterling Truck|AT9500", "Mack|DM", "Western Star|4900EX", "Peterbilt|379", "American LaFrance|Condor",
+    "Western Star|4800", "Western Star|4900FA", "White|WCM", "Spartan Motors|Gladiator", "Peterbilt|378",
+    "Pierce Mfg. Inc.|Dash", "White/GMC|ACM", "Kalmar|YT50", "Western Star|4900SA", "Mack|CL", "American LaFrance|ALF Eagle",
+    "Sterling Truck|L8500", "Spartan Motors|Metro Star", "White|WCL", "Ottawa|YT30", "Sterling Truck|A9522",
+    "Peterbilt|384", "Sterling Truck|L9500", "Peterbilt|349", "White|WHL", "Western Star|6900XD", "Western Star|5900",
+    "Mack|RW", "Western Star|5800", "Peterbilt|320", "Peterbilt|377", "White/GMC|WAH", "Seagrave Fire Apparatus|J",
+    "Duplex|D9400", "Mack|GU7", "Sterling Truck|LT9501", "Indiana Phoenix|11 Yard", "Kalmar|Ottawa 4 X 2",
+    "Autocar|ACL", "Advance Mixer|Advance Mixer", "Oshkosh Motor Truck Co.|S", "Ford|AT9513", "White/GMC|WCA",
+    "White/GMC|WG", "Ford|AT9522", "Autocar|DK", "Autocar LLC.|Xspotter Off Road", "Peterbilt|385", "White/GMC|WCL",
+    "Western Star|4900", "Pierce Mfg. Inc.|Enclosed Cab", "Mack|DMM", "Sterling Truck|Condor", "Peterbilt|359",
+    "White/GMC|WCM", "Ford|A9513", "White|WIM", "Spartan Motors|Diamond", "Crane Carrier|Low Entry", "FWD Corporation|R",
+    "Crane Carrier|Century II", "Autocar LLC.|Xpeditor", "Pierce Mfg. Inc.|Impel", "Peterbilt|362", "Mack|RM",
+    "White/GMC|WHS", "Oshkosh Motor Truck Co.|P", "Ottawa|YT60T", "Mack|MR", "Mack|MH", "Peterbilt|367", "White|WIL",
+    "Mack|RS", "Mack|LEU", "Ford|CLT9000", "Peterbilt|386", "Western Star|3800", "Emergency One|Emergency One",
+    "White/GMC|ACL", "Sterling Truck|LT8500", "Sterling Truck|L9513", "Duplex|D500", "Pierce Mfg. Inc.|Arrow XT",
+    "White/GMC|WXLL", "Oshkosh Motor Truck Co.|Highland", "Autocar LLC.|Xpeditor WXR", "Crane Carrier|Drill Rig",
+    "GMC|Astro", "White/GMC|WCS", "Crane Carrier|Centurion", "Mack|MRE", "White/GMC|WHL", "White/GMC|WHR", "Mack|CH",
+    "Peterbilt|388", "GMC|General", "Crane Carrier|IRL", "Mack|GU8", "Mack|CF", "Mack|RWS", "Mack|R", "Sterling Truck|LT9513",
+    "White/GMC|WX", "Autocar LLC.|Xpeditor WXLL", "Sterling Truck|LT7500", "Mack|LE", "Peterbilt|375", "White|WCS",
+    "Mack|WS", "Sterling Truck|L9511", "Ottawa|YT50", "White|WCA", "Oshkosh Motor Truck Co.|H", "Seagrave Fire Apparatus|T",
+    "Peterbilt|352", "White/GMC|WIA", "Peterbilt|353", "Pierce Mfg. Inc.|Velocity", "White|WX", "Crane Carrier|ISL",
+    "Sterling Truck|L9501", "Marmon Herrington|57P", "White/GMC|WIL", "Peterbilt|372", "Peterbilt|340", "Sterling Truck|A9500",
+    "White/GMC|WIM", "Peterbilt|310", "Mack|MRU", "Pierce Mfg. Inc.|Saber", "Diamond Reo|C116", "Peterbilt|587", "Autocar|DS",
+    "Peterbilt|348", "Mack|CV", "Peterbilt|567", "Spartan Motors|Advantage", "White|WIS", "Sterling Truck|LT9522",
+    "Spartan Motors|Force", "Sterling Truck|L8501", "Terex / Terex Advance|Terex Advance Mixer", "Mack|MC",
+    "Sterling Truck|LT9511", "Advance Mixer|M", "Sterling Truck|L7501", "Mack|RL", "Mack|RWL", "Western Star|4900E",
+    "Mack|RB", "Oshkosh Motor Truck Co.|FF", "White/GMC|WHLB", "White/GMC|J9C0", "Duplex|D9800", "Ford|CL9000",
+    "Seagrave Fire Apparatus|W", "Kalmar|YT30", "White/GMC|WXR", "White|WHS", "Giant|C116", "Mack|CXP", "Mack|FDM",
+    "Pierce Mfg. Inc.|Quantum", "Crane Carrier|IFL", "Pierce Mfg. Inc.|Custom", "Unimog|3350", "Mack|CHN",
+    "Spartan Motors|Monarch", "Oshkosh Motor Truck Co.|FCM", "Peterbilt|376", "Peterbilt|337", "Duplex|D350", "Peterbilt|325",
+    "Sterling Truck|L8513", "Peterbilt|382", "Oshkosh Motor Truck Co.|MPT", "Pierce Mfg. Inc.|Open Cab", "Western Star|4700SB",
+    "Peterbilt|389", "American LaFrance|Metropolitan", "Oshkosh Motor Truck Co.|NL", "Crane Carrier|Equipment Carrier",
+    "Sterling Truck|LT7501", "Mack|U", "Ford|L8501", "Oshkosh Motor Truck Co.|D", "Seagrave Fire Apparatus|H", "Volvo|ACL",
+    "Lodal|ECO 3000", "Volvo|WH", "Ford|LT9522", "Ford|LT9501", "Ford|LT9513", "Ford|LTLS9000", "Volvo|WG", "Ford|LA9000",
+    "International Harvester|7600", "Ford|LTA9000", "Ford|LL9000", "Ford|LLA9000", "Ford|L8000", "Kovatch|Firetruck",
+    "Volvo|WC", "Volvo|VHD", "Volvo|WX", "Volvo|VAH", "Ford|LTLA9000", "Ford|LTS8000", "Ford|LTL9000", "Volvo|WAH",
+    "Lodal|EVO T-28", "International Harvester|WorkStar 7600", "Mercedes-Benz|L1319", "Ford|LS8000F", "Ford|LNT8000",
+    "Lodal|EVO T-25", "Mercedes-Benz|LP1219", "Lodal|BI Loader", "Ford|LLS9000", "Lodal|ECO 3030", "International Harvester|7700",
+    "Ford|FT8000", "Lodal|EVO MAG-20", "Lodal|EVO D-320", "Lodal|EVO Combo", "Ford|LT9511", "Ford|L9501", "Volvo|FE", "Volvo|WI",
+    "Ford|LT8501", "Ford|L9513", "White|WXLL", "Capacity Of Texas|TJ7000", "Capacity Of Texas|TJ6500", "Duplex|D9500",
+    "Chevrolet|C60", "International Harvester|2674", "International Harvester|9400i SBA", "International Harvester|9200 SBA",
+    "Caterpillar|CT660", "International Harvester|F2674", "International Harvester|9400", "International Harvester|2574",
+    "International Harvester|7400", "Chevrolet|C70", "International Harvester|8100", "Volvo|VNL", "International Harvester|9200i SBA",
+    "International Harvester|4300", "International Harvester|4400", "International Harvester|4400LP", "Ford|C8000",
+    "International Harvester|ProStar", "Ford|C700", "International Harvester|2554", "Chevrolet|C60 Kodiak",
+    "International Harvester|7500", "International Harvester|1954", "Volvo|VNM", "International Harvester|4900",
+    "International Harvester|2654", "Capacity Of Texas|TJ5000", "Chevrolet|W4500 Tiltmaster", "International Harvester|8600 SBA",
+    "Spartan Motors|Charger", "International Harvester|8600 TranStar", "International Harvester|F2574",
+    "International Harvester|4300LP", "Ford|C600", "Spartan Motors|Baron", "Ford|C800", "International Harvester|F1954",
+    "International Harvester|4700LP", "Autocar LLC.|Xpert", "Federal Motors|Federal Motors", "Autocar|AT", "FWD Corporation|America",
+    "International Harvester|9300", "Peterbilt|387", "Sterling Truck|Acterra 6500", "International Harvester|9370",
+    "International Harvester|F9370", "Seagrave Fire Apparatus|M", "Pierce Mfg. Inc.|Non Crew Cab", "Autocar|C / DC",
+    "Ford|CF7000", "Chevrolet|W5500 Tiltmaster", "GMC|W4500 Forward", "GMC|W5500 Forward", "GMC|C7000", "Sterling Truck|L7500",
+    "Sterling Truck|ST9500", "GMC|C6000", "Sterling Truck|Acterra 8500", "Sutphen Corp.|Special", "Sterling Truck|Acterra",
+    "Sutphen Corp.|Pumper", "Hino|FF17", "Ford|LN600", "Hino|FF19", "Sterling Truck|Acterra 7500", "Hino|FE17",
+    "GMC|W6500 Forward", "Ford|LN700", "Hino|FFC1", "Sterling Truck|Acterra 5500", "Hino|FE19", "Hino|FD17",
+    "Sterling Truck|SC7000 Cargo", "Isuzu|NQR", "Isuzu|NPR", "Isuzu|NPR-HD", "Isuzu|FSR", "Isuzu|EVR", "International Harvester|LoneStar",
+    "Peterbilt|579", "UD|1400", "Ford|LN7000", "Mack|GU4", "Mack|CXN", "Mack|CX", "Mack|GU5", "Caterpillar|CT680",
+    "Hino|338", "International Harvester|5600i", "International Harvester|9900i", "Hino|195", "Hino|FB1817", "GMC|Brigadier",
+    "GMC|C8500 Topkick", "Western Star|5700XE", "Ford|LN800", "International Harvester|9900", "Ford|LNT800", "Autocar LLC.|Xspotter On Road",
+    "Gillig|Motorhome", "Hino|358", "Ford|C900", "Hino|258", "International Harvester|5000", "Mitsubishi Fuso|FM-SR",
+    "Mitsubishi Fuso|FK", "International Harvester|F5070", "Western Star|4700SF", "International Harvester|5070",
+    "Mitsubishi Fuso|FE-HD", "International Harvester|5500i", "Mitsubishi Fuso|FM-HR", "Mitsubishi Fuso|FM-SP",
+    "Mitsubishi Fuso|FH", "International Harvester|F5070-SF", "Mitsubishi Fuso|FE-SP", "International Harvester|CF500",
+    "International Harvester|F5070-WW", "Mitsubishi Fuso|FM", "Chevrolet|LCF 4500", "Mitsubishi Fuso|FG",
+    "International Harvester|5070-RHD", "Mitsubishi Fuso|FE", "UD|1300", "UD|2300", "UD|3000HD", "Mitsubishi Fuso|Canter FE125",
+    "UD|3300", "Western Star|4800SB", "UD|1800CS", "UD|1800", "UD|2000", "UD|3000", "UD|2300DH", "UD|2300LP", "UD|2600",
+    "UD|1200", "UD|550T", "Mitsubishi Fuso|FE145CC", "Sterling Truck|Car Hauler", "Mack|CXU", "Mack|TD700", "Hendrickson|Firetruck",
+    "Hino|155", "Peterbilt|520", "Chevrolet|LCF 3500", "Volvo|VNL 630", "Volvo|VNL 740", "Isuzu|NPR-XD", "International Harvester|Durastar",
+    "Volvo|VNL 300", "International Harvester|HX620", "Volkswagen|Constellation", "Volvo|VNL 400", "Scania|SERIE G", "MAN|TGS",
+    "International Harvester|8200", "Mack|LR600", "International Harvester|8300", "International Harvester|8500 TranStar",
+    "International Harvester|8500", "Hino|195h", "Giant Motors|GF5000", "Kalmar|Ottawa T2", "Isuzu|NRR", "Volvo|VNR",
+    "Mack|Anthem", "International Harvester|WorkStar 7400", "Scania|SERIE S", "Volvo|VNR 400", "Scania|SERIE P",
+    "Chevrolet|LCF 5500XD", "Mack|TerraPro", "Indiana Phoenix|10.5 Yard", "Mack|LR", "International Harvester|HV507",
+    "Chevrolet|LCF 4500XD", "International Harvester|5900i", "Mitsubishi Fuso|Canter FE160", "Mack|Granite",
+    "International Harvester|HV513", "Mitsubishi Fuso|Canter FG4X4", "Chevrolet|C8500", "International Harvester|LT625",
+    "Ford|LTS8000F", "Peterbilt|548", "Astra|Dumper Articulado", "Scania|SERIE L", "International Harvester|HV607",
+    "Astra|Dumper Rigido", "Western Star|47X", "International Harvester|RH613", "Scania|SERIE R", "International Harvester|MV607",
+    "Ford|FT900", "Ferrara|Fire Apparatus", "Western Star|49X", "Mack|Titan", "Peterbilt|536", "FAW|420G", "International Harvester|CV515",
+    "Mack|CHU", "Ford|LCF", "Volvo|VNL 860", "Capacity Of Texas|TJ9000", "International Harvester|HV613", "Hino|300",
+    "International Harvester|MV", "Mack|Pinnacle", "Ford|LA8000F", "International Harvester|MV60E", "FAW|ELAM 4039",
+    "International Harvester|TranStar", "Chevrolet|LCF 6500XD", "Chevrolet|W7500 Tiltmaster", "International Harvester|4700LPX",
+    "Ford|LNT8000F", "FAW|ELAM 1607D", "Chevrolet|W6500 Tiltmaster", "GMC|P4500", "Chevrolet|T8500", "Mack|Granite 8 X 4",
+    "Hino|M4", "Capacity Of Texas|Sabre 5", "Volvo|VAH 300", "FAW|ELAM 2417", "FAW|ELAM 1303D", "Volvo|VNL 760", "Chevrolet|P60",
+    "Volvo|VNR 640", "Foton|Aumark S7", "Autocar|S", "Marmon Herrington|57PA", "Mack|CM", "Pierce Mfg. Inc.|Lance",
+    "FWD Corporation|Cranecarrier", "White|WIA", "Western Star|6900", "White/GMC|WIS", "Ottawa|YT50 ROLOC", "Marmon Herrington|103P",
+    "Western Star|3700", "White/GMC|WHEB", "Spartan Motors|Furion", "Kalmar|YT60T", "Sterling Truck|AT9513", "Marmon Herrington|103PA",
+    "Lodal|EVO DS-3800", "Ford|L9511", "Mercedes-Benz|L1113", "Mercedes-Benz|LPS1525", "Mercedes-Benz|L1013", "Ford|LT8000",
+    "Ottawa|LESL", "Mercedes-Benz|L1117", "Ford|LT8513", "Ford|LS8000", "Advance Mixer|S", "Sutphen Corp.|Aerial",
+    "International Harvester|4800", "International Harvester|7300", "International Harvester|4200", "International Harvester|4100",
+    "FWD Corporation|C", "Duplex|D450", "Ford|C7000", "Hino|145", "GMC|W7500 Forward", "Sterling Truck|SC8000 Cargo",
+    "Hino|FG22", "Hino|308", "Chevrolet|W3500 Tiltmaster", "International Harvester|9900ix", "Hino|185", "Hino|268",
+    "Hino|198", "International Harvester|CF600", "Mitsubishi Fuso|FM-MR", "Volvo|VT", "Mitsubishi Fuso|FE180",
+    "UD|1800HD", "Mitsubishi Fuso|FE145", "Spartan Motors|Metro Star X", "Volvo|VNL 430", "Volvo|VNL 670", "Mack|MS250P Mid-Liner",
+    "Mack|CS250P Mid-Liner", "International Harvester|HX520", "International Harvester|WorkStar 7300", "Chevrolet|LCF 4500HD",
+    "Sterling Truck|AT9522", "Chevrolet|LCF 5500HD", "Hendrickson|VT 100", "Hino|M5", "Peterbilt|537", "International Harvester|7100",
+    "International Harvester|F2554", "Mitsubishi Fuso|Canter FE180", "International Harvester|HX615", "International Harvester|HX515",
+    "International Harvester|1652SC", "International Harvester|LT", "Ford|LT8000F", "Autocar LLC.|DC-64", "Kalmar|T2E",
+    "Foton|Auman 3344", "International Harvester|HV", "Peterbilt|210", "Sterling Truck|A9513", "Sterling Truck|L8511",
+    "Crane Carrier|Recycling Equipment", "Kalmar|Ottawa 6 X 4", "Peterbilt|220", "Ford|L8513", "Ford|A9522", "Pierce Mfg. Inc.|Enforcer",
+    "Western Star|WSH", "Mack|DMC", "Diamond Reo|C120", "Sterling Truck|LT8511", "Mack|WL", "Ottawa|Firetruck", "White|WHM",
+    "Mack|CTP", "Lodal|EVO 320", "Lodal|ECO SA-31", "Volvo|VN", "Duplex|L100", "White/GMC|J8C0", "Seagrave Fire Apparatus|L",
+    "International Harvester|1652UPS", "Oshkosh Motor Truck Co.|T", "Hino|SG19", "Spartan Motors|Front Discharge Mixer",
+    "Isuzu|FRR", "International Harvester|TerraStar", "Ford|LNT900", "Mitsubishi Fuso|FG140", "Mitsubishi Fuso|FE140",
+    "UD|3000SD", "UD|2800", "Volvo|VAH 430", "Volkswagen|Worker", "Western Star|4800SF", "Caterpillar|CT681",
+    "FAW|ELAM 1305D", "Workhorse Custom Chassis|W72", "Mack|MD6", "International Harvester|F2654", "Mack|Vision",
+    "FAW|ELAM 1605D", "Volvo|VNX", "FAW|ELAM 2211D", "Hino|238", "Hendrickson|Crane/Drill Rig", "FAW|ELAM 1102D",
+    "Sterling Truck|L9522", "White/GMC|WXLM", "Sterling Truck|LT8501", "Ottawa|LERL", "Mack|CT", "Oshkosh Motor Truck Co.|A",
+    "Bering|HD67MX", "Hyundai|HLD 150", "Spartan Motors|Kicker", "Lodal|EVO D-3000", "Capacity Of Texas|Phett", "Duplex|D960",
+    "International Harvester|1452SC", "Savage|9 Cubic Yard", "Mitsubishi Fuso|FE-CA", "International Harvester|F5070-SF/WW",
+    "UD|1100", "UD|600T", "Ford|LT800", "Kimble Chassis|KF3200C", "Mack|MD7", "Volvo|VNR 300", "Volvo|VAH 640", "FAW|ELAM HANG",
+    "Spartan Motors|Mountain Star", "Terex / Terex Advance|Glider", "White/GMC|WHM", "Mack|F", "Spartan Motors|GT-One",
+    "Unimog|3900", "Oshkosh Motor Truck Co.|NK", "Bering|MD23M", "Hyundai|HMD 230", "Hyundai|HMD 260", "Lodal|EVO 3800",
+    "International Harvester|4600UH", "FWD Corporation|BXU", "Autocar|Construcktor", "Pierce Mfg. Inc.|Dash CF",
+    "International Harvester|WorkStar 7700", "International Harvester|F5070-RHD", "Mack|MV", "Sterling Truck|LT8513",
+    "Giant Motors|GF6000", "Foton|Aumark S12", "FAW|ELAM JH6 420", "MAN|TGM", "Western Star|57X", "Roadmaster Rail|Dyanaster",
+    "Oshkosh Motor Truck Co.|J Series", "Bering|MD26M", "Ford|L8511", "Mercedes-Benz|LP1419", "Lodal|EVO DS-3400",
+    "International Harvester|4600LP", "International Harvester|4600", "International Harvester|4200LP", "Hino|FG19",
+    "Ford|L800", "International Harvester|F5070-SF/RHD", "Chevrolet|LCF 3500HD", "Volkswagen|Workline", "Crane Carrier|Low Entry Drop Frame",
+    "Foton|Aumark S3", "Marmon Herrington|125P", "Marmon Herrington|57L", "Lodal|ECO SA-33", "Lodal|ECO SA-33-3070",
+    "Mercedes-Benz|L1116", "Seagrave Fire Apparatus|S", "Maxim|Maxim", "Ford|CF6000", "Ford|CT800D", "Hino|FB14", "Isuzu|HXR",
+    "Ford|LN900", "Savage|10 Cubic Yard", "Ford|L900", "FAW|ELAM JH6 430", "Chevrolet|LCF 3500HG", "Indiana Phoenix|10 Yard",
+    "Mercedes-Benz|L1317", "Autocar|ACM", "Hino|SG22", "Mercedes-Benz|HDX", "Foton|Auman 2544", "Dina|Hustler", "Duplex|D9000",
+    "Bering|LD15A", "Marmon Herrington|125PA", "Mercedes-Benz|L1316", "Duplex|D900", "Spartan Motors|CV", "Foton|Auman 1944",
+    "Duplex|D8400", "Ford|LT8511", "Volvo|VAH 400", "Marmon Herrington|86P", "Peterbilt|397", "Crane Carrier|Glider",
+    "Foton|Auman 1938", "Rosenbauer America|RIV Fire", "Mack|LC", "Hendrickson|Bullet", "Foton|Auman 1839", "FAW|ELAM 1304D",
+    "Giant|2WMX", "Ford|L9522", "FAW|ELAM JH6 460", "Foton|EST A", "FAW|ELAM SKY V", "Foton|Aumark S6", "Duplex|D9600",
+    "Zeligson|G-744", "FAW|460D", "Foton|Auman 1935", "International Harvester|G2554", "Hendrickson|Bullet Glider",
+    "International Harvester|G2654", "International Harvester|G4900", "Hendrickson|T-Glider", "International Harvester|G8200",
+    "Marmon Herrington|57 Glider", "Advance Mixer|Glider", "International Harvester|G1954", "International Harvester|G2604",
+    "Hendrickson|VT Glider", "International Harvester|G2504", "International Harvester|G5070", "International Harvester|G2105",
+    "International Harvester|G4700", "International Harvester|G1904", "Ford|F-8000" // put excluded models here
+        ];
+
+        function findMakeAndModel(yearMakeModel) {
+            yearMakeModel = yearMakeModel.replace("Mercedes Benz", "Mercedes-Benz");
+            yearMakeModel = yearMakeModel.replace("International", "Navistar");
+            yearMakeModel = yearMakeModel.replace("All American", "Blue Bird|All American");
+            yearMakeModel = yearMakeModel.replace("Saf-T-Liner", "Thomas|Saf-T-Liner");
+            yearMakeModel = yearMakeModel.replace("Xpeditor", "Autocar LLC.|Xpeditor");
+            yearMakeModel = yearMakeModel.replace("TC2000", "Blue Bird|TC2000");
+
+            for (let make of makesList) {
+                if (yearMakeModel.startsWith(make)) {
+                    let model = yearMakeModel.slice(make.length).trim();
+                    if (model.startsWith("|")) {
+                        model = model.slice(1).trim();
+                    }
+                    return [make, model];
+                }
+            }
+            return [null, yearMakeModel];
+        }
+
+        function mergeYearRanges(years) {
+            years = [...new Set(years)].sort((a, b) => a - b);
+            let merged = [];
+            let start = years[0];
+            let prev = years[0];
+
+            for (let i = 1; i < years.length; i++) {
+                if (years[i] !== prev + 1) {
+                    merged.push(start === prev ? `${start}` : `${start}-${prev}`);
+                    start = years[i];
+                }
+                prev = years[i];
+            }
+            merged.push(start === prev ? `${start}` : `${start}-${prev}`);
+            return merged;
+        }
+
+        function processFitments(fitments) {
+            const fitmentDict = {};
+            const fitmentLines = fitments.trim().split('\n');
+            const fitmentList = [];
+
+            for (let i = 0; i < fitmentLines.length; i += 4) {
+                fitmentList.push(fitmentLines[i].trim());
+            }
+
+            fitmentList.forEach(yearMakeModel => {
+                let yearRangeMatch = yearMakeModel.match(/\d{4}-\d{4}/);
+                let startYear, endYear, years;
+
+                if (yearRangeMatch) {
+                    [startYear, endYear] = yearRangeMatch[0].split('-').map(Number);
+                    if (endYear < 1990) return;
+                    if (startYear < 1990) startYear = 1990;
+                    years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
+                    yearMakeModel = yearMakeModel.replace(yearRangeMatch[0], '').trim();
+                } else {
+                    yearRangeMatch = yearMakeModel.match(/\d{4}/);
+                    if (yearRangeMatch) {
+                        let year = Number(yearRangeMatch[0]);
+                        if (year < 1990) return;
+                        years = [year];
+                        yearMakeModel = yearMakeModel.replace(yearRangeMatch[0], '').trim();
+                    }
+                }
+
+                const [make, model] = findMakeAndModel(yearMakeModel);
+                const fitmentKey = `${make}|${model}`;
+
+                if (make) {
+                    if (excludedModels.includes(fitmentKey)) {
+                        years = years.filter(year => year >= 2000);
+                        if (years.length > 0) {
+                            startYear = Math.max(startYear, 2000);
+                            years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
+                        } else {
+                            return;
+                        }
+                    }
+
+                    if (!fitmentDict[fitmentKey]) fitmentDict[fitmentKey] = new Set();
+                    years.forEach(year => fitmentDict[fitmentKey].add(year));
+                }
+            });
+
+            const processedFitments = [];
+            for (let [fitmentKey, years] of Object.entries(fitmentDict)) {
+                const mergedYears = mergeYearRanges([...years]);
+                mergedYears.forEach(yearRange => {
+                    processedFitments.push(`${yearRange}|${fitmentKey}`);
+                });
+            }
+            return processedFitments.join('^^');
+        }
+
+        function reprocessFitments(fitments) {
+            // Reprocess the fitments to fix any errors
+            const lines = fitments.split('^^');
+            const correctedFitments = lines.map(line => {
+                return line
+                    .replace('Autocar|LLC.', 'Autocar LLC.')
+                    .replace('Xpeditor WX WX', 'Xpeditor WX');
+            });
+            return correctedFitments.join('^^');
+        }
+
+        document.getElementById('processButton').addEventListener('click', () => {
+            const inputText = document.getElementById('inputArea').value.trim();
+            const processedFitments = processFitments(inputText);
+            const resultArea = document.getElementById('resultArea');
+            resultArea.value = processedFitments;
+            document.getElementById('copyButton').disabled = false;
+            document.getElementById('reprocessButton').disabled = false;
+            const uniqueCount = inputText.split('\n').filter((_, i) => i % 4 === 0).length;
+            alert(`${uniqueCount} unique fitments were processed.`);
+        });
+
+        document.getElementById('reprocessButton').addEventListener('click', () => {
+            const resultText = document.getElementById('resultArea').value.trim();
+            const reprocessedFitments = reprocessFitments(resultText);
+            document.getElementById('resultArea').value = reprocessedFitments;
+            alert('The results have been reprocessed.');
+        });
+
+        document.getElementById('copyButton').addEventListener('click', () => {
+            const resultText = document.getElementById('resultArea').value.trim();
+            navigator.clipboard.writeText(resultText).then(() => {
+                alert('The result has been copied to clipboard.');
+            });
+        });
+    </script>
+</body>
+</html>

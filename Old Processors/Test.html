@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Cross-Reference Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .error {
+            color: red;
+        }
+        .copy-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .copy-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Excel Cross-Reference Tool</h1>
+    <p>Upload the Specification File:</p>
+    <input type="file" id="specFileInput" accept=".xlsx, .xls">
+    <p>Upload the Bundle SKUs File:</p>
+    <input type="file" id="bundleFileInput" accept=".xlsx, .xls">
+    <br><br>
+    <label for="inventoryInput">Enter Inventory Numbers (comma-separated):</label>
+    <input type="text" id="inventoryInput">
+    <button onclick="searchInventory()">Search</button>
+    <p id="errorMessage" class="error"></p>
+    <table id="resultsTable" style="display: none;">
+        <thead>
+            <tr id="tableHeader"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <button id="copyButton" class="copy-button" style="display: none;" onclick="copyToClipboard()">Copy to Clipboard</button>
+
+    <script>
+        let specData = [];
+        let bundleData = [];
+
+        document.getElementById("specFileInput").addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    specData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
+        document.getElementById("bundleFileInput").addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    bundleData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
+        function searchInventory() {
+            const inventoryInput = document.getElementById("inventoryInput").value.trim();
+            const inventoryNumbers = inventoryInput.split(",").map(num => num.trim()); // Split input by commas
+            const errorMessage = document.getElementById("errorMessage");
+            const resultsTable = document.getElementById("resultsTable");
+            const tableHeader = document.getElementById("tableHeader");
+            const tableBody = document.getElementById("tableBody");
+            const copyButton = document.getElementById("copyButton");
+
+            errorMessage.textContent = "";
+            resultsTable.style.display = "none";
+            tableHeader.innerHTML = "";
+            tableBody.innerHTML = "";
+            copyButton.style.display = "none";
+
+            if (inventoryNumbers.length === 0 || inventoryNumbers[0] === "") {
+                errorMessage.textContent = "Please enter at least one inventory number.";
+                return;
+            }
+
+            if (specData.length === 0 || bundleData.length === 0) {
+                errorMessage.textContent = "Please upload both Specification and Bundle SKUs files.";
+                return;
+            }
+
+            // Prepare headers for results
+            const headers = ["SKU", "Inventory Number", ...specData[0].slice(15)];
+            headers.forEach(header => {
+                const th = document.createElement("th");
+                th.textContent = header;
+                tableHeader.appendChild(th);
+            });
+
+            // Prepare results
+            const allData = [];
+            inventoryNumbers.forEach(inventoryNumber => {
+                const specRow = specData.find(row => row[0] == inventoryNumber);
+                if (!specRow) {
+                    errorMessage.textContent += `No specifications found for Inventory Number ${inventoryNumber}.\n`;
+                    return;
+                }
+
+                const bundleRows = bundleData.filter(row => row[0] == inventoryNumber);
+                if (bundleRows.length === 0) {
+                    errorMessage.textContent += `No SKUs found for Inventory Number ${inventoryNumber}.\n`;
+                    return;
+                }
+
+                // Process rows for the current inventory number
+                bundleRows.forEach(bundleRow => {
+                    const row = document.createElement("tr");
+                    const rowData = [];
+
+                    // Column 1: SKU
+                    rowData.push(bundleRow[1] || "");
+                    const tdSku = document.createElement("td");
+                    tdSku.textContent = bundleRow[1] || "";
+                    row.appendChild(tdSku);
+
+                    // Column 2: Inventory Number
+                    rowData.push(bundleRow[0] || "");
+                    const tdInv = document.createElement("td");
+                    tdInv.textContent = bundleRow[0] || "";
+                    row.appendChild(tdInv);
+
+                    // Column 3 onwards: Starting from Column 16 of Specification File
+                    for (let i = 15; i < specRow.length; i++) {
+                        rowData.push(specRow[i] || "");
+                        const tdSpec = document.createElement("td");
+                        tdSpec.textContent = specRow[i] || "";
+                        row.appendChild(tdSpec);
+                    }
+
+                    allData.push(rowData.join("\t"));
+                    tableBody.appendChild(row);
+                });
+            });
+
+            if (allData.length > 0) {
+                resultsTable.style.display = "table";
+                copyButton.style.display = "inline-block";
+                copyButton.dataset.copyData = allData.join("\n");
+            } else {
+                errorMessage.textContent = "No matching results found.";
+            }
+        }
+
+        function copyToClipboard() {
+            const copyButton = document.getElementById("copyButton");
+            const copyData = copyButton.dataset.copyData;
+
+            navigator.clipboard.writeText(copyData).then(() => {
+                alert("Data copied to clipboard!");
+            }).catch(err => {
+                alert("Failed to copy data: " + err);
+            });
+        }
+    </script>
+</body>
+</html>

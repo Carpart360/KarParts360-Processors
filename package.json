@@ -1,0 +1,17 @@
+{
+  "name": "karparts360-processors",
+  "version": "1.0.0",
+  "main": "KarParts360-Processors.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node \"KarParts360-Processors.js\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-session": "^1.18.1"
+  },
+  "description": ""
+}

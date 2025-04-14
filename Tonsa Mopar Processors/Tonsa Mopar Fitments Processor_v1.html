@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitment Processor</title>
+    <style>
+        body {
+            background-color: #B0B0B0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+	}
+        .logo {
+            display: block;
+            margin: 0 auto 20px auto;
+            max-width: 100%;
+            height: auto;
+        }
+        textarea {
+            width: 80%;
+            height: 200px;
+            background-color: #D3D3D3;
+            margin: 10px 0;
+            padding: 10px;
+        }
+        button {
+            background-color: #de9b14;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #c88610;
+        }
+        #results {
+            width: 80%;
+            height: 250px;
+            background-color: #D3D3D3;
+            margin: 10px 0;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <img src="C:/Users/USER/Downloads/Logo.png" alt="Logo" class="logo">
+    <textarea id="inputText" placeholder="Enter fitments data here..."></textarea>
+    <button onclick="processFitments()">Process</button>
+    <button onclick="copyToClipboard()">Copy to Clipboard</button>
+    <div id="results" class="hidden"></div>
+    <script>
+        const makesList = [
+            "Suzuki", "Porsche", "Land Rover", "Subaru", "Alfa Romeo", "Jaguar", "Peugeot", "BMW", "Isuzu", "Morgan",
+            "Lamborghini", "Chrysler", "Dodge", "Jeep", "Checker", "Plymouth", "Laforza", "Kia", "Buick", "Cadillac",
+            "Chevrolet", "Rover", "GMC", "DeLorean", "Oldsmobile", "Pontiac", "Ford", "Lincoln", "Mercury", "Acura",
+            "Honda", "Mercedes-Benz", "AMC", "Nissan", "Avanti", "Hyundai", "Infiniti", "Bentley", "Rolls-Royce",
+            "International Harvester", "Volvo", "Audi", "Lexus", "Toyota", "Aston Martin", "Ferrari", "Maserati",
+            "Mazda", "Sterling", "Mitsubishi", "Volkswagen", "Saturn", "Panoz", "Allard", "Lancia", "Hummer", "Jensen",
+            "Facel Vega", "Maybach", "Studebaker", "Pegaso", "Reliant", "Tatra", "Citroën", "Nash", "Jowett", "Saab",
+            "Workhorse", "Bugatti", "DAF", "Freightliner", "Lotus", "Datsun", "Lanchester", "MG", "Geo", "Daihatsu",
+            "Fiat", "Renault", "Opel", "Lada", "Kaiser", "Alvis", "Armstrong-Siddeley", "Moretti", "Delahaye", "Triumph",
+            "Siata", "Berkeley", "Wolseley", "Glas", "Moskvich", "Maico", "Packard", "Humber", "Eagle", "Turner",
+            "Zundapp", "Bond", "Simca", "Singer", "Hudson", "Salmson", "Austin", "Goliath", "Skoda", "Daimler", "Morris",
+            "Bristol", "Riley", "Matra", "Hillman", "Fargo", "Sunbeam", "Abarth", "Deutsch-Bonnet", "DeSoto", "Ram",
+            "AC", "Metropolitan", "Shelby", "NSU", "DKW", "Willys", "Dual-Ghia", "Edsel", "Sabra", "Vauxhall", "TVR",
+            "Fairthorpe", "Frazer Nash", "Marathon", "Osca", "Alpine", "Peerless", "Borgward", "Wartburg", "Cisitalia",
+            "Crosley", "Healey", "Dellow", "Panhard", "Cunningham", "Mini", "Austin Healey", "Smart", "Mitsubishi Fuso",
+            "Mack", "Hino", "Scion", "UD", "SRT", "Iveco", "Sterling Truck", "Peterbilt", "Seat", "LaSalle", "Cord",
+            "American Bantam", "Kenworth", "Flxible Transit Bus", "Western Star", "American LaFrance", "Blue Bird",
+            "White", "Spartan Motors", "Dina Transit Bus", "Pierce Mfg. Inc.", "White/GMC", "Kalmar", "Ottawa",
+            "Roadmaster Rail", "Seagrave Fire Apparatus", "Duplex", "Indiana Phoenix", "Autocar", "Advance Mixer",
+            "Oshkosh Motor Truck Co.", "Autocar LLC.", "Crane Carrier", "FWD Corporation", "Van Hool", "Emergency One",
+            "Nova Bus Corporation", "Gillig", "Motor Coach Industries", "Prevost", "Crown Coach", "New Flyer",
+            "Transportation Mfg Corp.", "Terex / Terex Advance", "Ontario Bus", "El Dorado", "Orion Bus",
+            "Marmon Herrington", "Diamond Reo", "Neoplan", "Chance Coach Transit Bus", "Country Coach Motorhome", "Giant",
+            "Unimog", "Lodal", "Workhorse Custom Chassis", "Kovatch", "IC Corporation", "Thomas", "Eagle Transit Buses",
+            "Capacity Of Texas", "Caterpillar", "Maxwell", "Rickenbacker", "Rambler", "Jordan", "Hupmobile", "Auburn",
+            "Stutz", "Scripps Booth", "Duryea", "Blackhawk", "Gardner", "Elcar", "Jeffery", "Rockne", "Diana", "Marmon",
+            "Graham", "Pierce-Arrow", "Oakland", "Hendrickson", "Locomobile", "Case", "FWD", "Roamer", "Lexington",
+            "Franklin", "Davis", "Stearns Knight", "Star", "Isotta Fraschini", "Delage", "Haynes", "Hispano-Suiza",
+            "Talbot-Lago", "Reo", "Flint", "Velie", "Lagonda", "Durant", "Du Pont", "Moon", "Kissel", "Federal Motors",
+            "Evobus", "Genesis Transit Buses", "Stewart & Stevenson", "Tesla", "Sutphen Corp.", "McLaren", "VAM", "FAW",
+            "Dina", "Scania", "Foton", "MAN", "Giant Motors", "Daewoo", "Temsa Bus", "MASA", "Genesis", "Elva", "JAC",
+            "North American Bus Industries (NABI)", "Rivian", "Astra", "Fleetwood", "Nexus", "Leisure Travel",
+            "Country Coach", "Newmar", "Winnebago", "Holiday Rambler", "Itasca", "Gulf Stream", "Dynamax Corp",
+            "Forest River", "Thor Motor Coach", "Entegra Coach", "R-Vision", "Roadtrek", "Tiffin", "Renegade", "Coachmen",
+            "Phoenix", "Safari", "Brightdrop", "Iso", "Jayco", "Damon", "Monaco Coach", "Airstream", "American Coach",
+            "Coach House", "Spyker", "Lion", "Four Winds International", "Panoramic RV", "BYD", "East to West", "Ferrara",
+            "Pleasure-Way", "National RV", "Hymer", "GreenPower Motors", "Grande West", "AM General", "Chinook Motor Coach",
+            "Foretravel Motorhome", "Mobility Ventures", "VinFast", "Econoline", "Panther", "Proterra", "Lucid",
+            "Regency RV", "Changan", "Cupra", "BAIC", "De Tomaso", "JMC", "Excalibur", "Rosenbauer America", "Polestar",
+            "Monteverdi", "Hotchkiss", "Saleen", "Bizzarrini", "Bricklin", "Vespa", "Lloyd", "Lea-Francis", "Nardi",
+            "Toyopet", "Standard", "HRG", "Marauder", "Denzel", "Duesenberg", "Western RV", "Paige", "Stevens-Duryea",
+            "Windsor", "Westcott", "Essex", "Continental", "Utilimaster", "Zacua", "UAZ", "Chirey", "Xos", "Marcos",
+            "Alexander Dennis", "Henry J", "Arnolt-Bristol", "Goggomobil", "Bertone", "Messerschmitt", "Amphicar", "Omega",
+            "Darrin", "Griffith", "Coda", "Asuna", "Fisker", "Bus & Coach Intl (BCI)", "Chandler", "Yellow Cab",
+            "Graham-Paige", "Rollin", "Biddle", "Jewett", "Erskine", "Stanguellini", "Koenigsegg", "Merkur", "Karma",
+            "VPG", "Chanje", "Qvale", "Frazer", "Arnolt-MG", "Gordon-Keeble", "Mastretta", "American Austin", "Bering",
+            "Whippet", "Falcon Knight", "Hertz", "HCS", "Think", "Savage", "Kimble Chassis", "Yugo", "Hansa", "Swallow",
+            "Kurtis", "Cleveland", "Sheridan", "Cole", "Les Autobus MCI", "Ariel", "Apollo", "Apperson", "Viking",
+            "Maxim", "Evergreen RV", "Allstate", "Carado", "Roosevelt", "Lordstown Motors", "Irizar", "Dennis Eagle",
+            "SsangYong", "Tucker", "Doretti", "Marquette", "Zeligson", "De Vaux"
+        ];
+
+        function mergeYearRanges(years) {
+            years.sort((a, b) => a - b);
+            const merged = [];
+            let start = years[0];
+            let prev = years[0];
+
+            for (let i = 1; i < years.length; i++) {
+                if (years[i] !== prev + 1) {
+                    merged.push(start === prev ? `${start}` : `${start}-${prev}`);
+                    start = years[i];
+                }
+                prev = years[i];
+            }
+            merged.push(start === prev ? `${start}` : `${start}-${prev}`);
+            return merged;
+        }
+
+        function processFitments() {
+            const inputText = document.getElementById("inputText").value.trim();
+            const fitmentLines = inputText.split('\n').map(line => line.trim()).filter(line => line);
+            const fitmentDict = {};
+
+            fitmentLines.forEach(fitment => {
+                const columns = fitment.split('\t');
+                if (columns.length < 5) return;
+
+                const year = parseInt(columns[0]);
+                const make = columns[1].trim();
+                const model = columns[2].trim();
+
+                if (year < 1990 || !makesList.includes(make)) return;
+
+                const key = `${make}|${model}`;
+                if (!fitmentDict[key]) fitmentDict[key] = new Set();
+                fitmentDict[key].add(year);
+            });
+
+            const processedFitments = [];
+            Object.keys(fitmentDict).forEach(key => {
+                const [make, model] = key.split('|');
+                const years = Array.from(fitmentDict[key]);
+                const mergedYears = mergeYearRanges(years);
+                mergedYears.forEach(yearRange => {
+                    processedFitments.push(`${yearRange}|${make}|${model}`);
+                });
+            });
+
+            document.getElementById("results").classList.remove("hidden");
+            document.getElementById("results").textContent = processedFitments.join('^^');
+            alert(`${fitmentLines.length} unique fitments were processed.`);
+        }
+
+        function copyToClipboard() {
+            const resultText = document.getElementById("results").textContent.trim();
+            navigator.clipboard.writeText(resultText).then(() => {
+                alert("The result has been copied to clipboard.");
+            });
+        }
+    </script>
+</body>
+</html>

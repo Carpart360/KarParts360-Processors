@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summit Racing Format Fitment Processor</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <style>
+        body {
+            background-color: #B0B0B0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            padding: 20px;
+            text-align: center;
+        }
+        input, textarea, button {
+            padding: 5px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            border: 1px solid #333;
+        }
+        textarea {
+            width: 300px;
+            height: 120px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        button {
+            background-color: #de9b14;
+            color: black;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background-color: #c88c0d;
+            box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.3);
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+        }
+        #copyButtons {
+            margin-bottom: 15px;
+        }
+        #copyButtons button {
+            background-color: #de9b14;
+            color: black;
+            border: none;
+            padding: 5px 15px;
+            cursor: pointer;
+        }
+        #copyButtons button:hover {
+            background-color: #c88c0d;
+        }
+        .outputBox {
+            width: 95%;
+            height: 100px;
+            margin-bottom: 15px;
+        }
+        .container-horizontal {
+            display: flex;
+            justify-content: space-around;
+        }
+        .container-horizontal div {
+            flex-grow: 1;
+            margin-right: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+        }
+        #searchButton, #processButton {
+            width: 100px;
+            height: 35px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Summit Racing Format Fitment Processor</h2>
+        <div>
+            <label for="fileInput">Upload Excel File:</label>
+            <input type="file" id="fileInput" accept=".xlsx, .xls">
+        </div>
+        <div class="container-horizontal">
+            <div>
+                <label for="dataInput">Input Data</label>
+                <textarea id="dataInput" placeholder="Enter data in format: Year Range, Make, Model | Trim (optional) | Engine (optional) | Body (optional) | Drive Type (optional)"></textarea>
+                <button id="searchButton">Search</button>
+            </div>
+            <div>
+                <label for="completeFitmentBox">Complete Fitment Format</label>
+                <textarea id="completeFitmentBox" placeholder="This will show the 'Complete Fitment Format' results"></textarea>
+            </div>
+            <div>
+                <label for="eBayFitmentBox">Complete Compatibility</label>
+                <textarea id="eBayFitmentBox" placeholder="This will show the eBay Master processed results"></textarea>
+                <button id="processButton">Process</button>
+            </div>
+        </div>
+        <div id="copyButtons"></div>
+        <table id="resultTable" class="display">
+            <thead>
+                <tr></tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script>
+        let jsonData;
+        let columns = [];
+
+        // Example list of valid Makes
+        const validMakes = ["Hyundai", "Porsche", "Avanti", "Subaru", "Land Rover", "Triumph", "Jaguar", "Checker", "BMW", "Morgan", "Isuzu", "Chrysler", "Lamborghini", "Dodge", "Eagle", "Jeep", "Plymouth", "AM General", "Buick", "Cadillac", "Chevrolet", "GMC", "Oldsmobile", "Pontiac", "Ford", "Alfa Romeo", "Laforza", "Lincoln", "Mercury", "Acura", "Sterling", "Mercedes-Benz", "Saab", "AMC", "Nissan", "Bentley", "Rolls-Royce", "International Harvester", "Mitsubishi", "Volkswagen", "Audi", "Toyota", "Lexus", "Aston Martin", "Ferrari", "Mazda", "Saturn", "Kia", "INFINITI", "Maserati", "Honda", "Workhorse", "Maybach", "Freightliner", "Suzuki", "Renault", "Daihatsu", "Volvo", "Datsun", "Lotus", "Opel", "Fiat", "Peugeot", "Geo", "Mini", "Bertone", "Lancia", "Ram", "Daewoo", "Smart", "Mack", "UD", "Iveco", "Mitsubishi Fuso", "Hino", "Panoz", "Kenworth", "Sterling Truck", "Lada", "SRT", "Peterbilt", "McLaren", "Seat", "Scion", "MG", "Mastretta", "Bugatti", "Ottawa", "Roadmaster Rail", "Gillig", "Terex / Terex Advance", "Autocar", "Western Star", "Blue Bird", "Pierce Mfg. Inc.", "Oshkosh Motor Truck Co.", "Advance Mixer", "White/GMC", "Marmon Herrington", "Spartan Motors", "El Dorado", "American LaFrance", "Prevost", "Crane Carrier", "Motor Coach Industries", "Kalmar", "Orion Bus", "Autocar LLC.", "Van Hool", "White", "Giant", "Seagrave Fire Apparatus", "Indiana Phoenix", "Duplex", "Flxible Transit Bus", "Emergency One", "Nova Bus Corporation", "Evobus", "Ontario Bus", "Foton", "New Flyer", "Chance Coach Transit Bus", "Dina Transit Bus", "Neoplan", "FWD Corporation", "Unimog", "Federal Motors", "Transportation Mfg Corp.", "Crown Coach", "Diamond Reo", "Lodal", "Kovatch", "Workhorse Custom Chassis", "IC Corporation", "Thomas", "Capacity Of Texas", "Eagle Transit Buses", "Sutphen Corp.", "Caterpillar", "Hendrickson", "North American Bus Industries (NABI)", "Tesla", "Asuna", "Genesis", "VAM", "FAW", "Kimble Chassis", "BAIC", "Dina", "Scania", "MAN", "Ariel", "AC", "Koenigsegg", "Giant Motors", "Temsa Bus", "Karma", "JAC", "Grande West", "MASA", "UAZ", "Hummer", "Iso", "Winnebago", "Forest River", "American Coach", "Country Coach", "Monaco Coach", "Leisure Travel", "Newmar", "Holiday Rambler", "Four Winds International", "Dynamax Corp", "Damon", "Itasca", "Fleetwood", "Gulf Stream", "Thor Motor Coach", "Renegade", "Chinook Motor Coach", "Entegra Coach", "Safari", "De Tomaso", "Jayco", "Starcraft Bus", "Morris", "Simca", "Siata", "Studebaker", "Packard", "Hudson", "Cisitalia", "R-Vision", "Moskvich", "Nexus", "Marmon", "Lea-Francis", "Coachmen", "Auburn", "Xos", "Roadtrek", "National RV", "Tiffin", "Phoenix", "Coach House", "Reliant", "Willys", "Graham", "Lagonda", "Sunbeam", "Reo", "Amphicar", "Borgward", "Allard", "Pleasure-Way", "Regency RV", "Foretravel Motorhome", "Country Coach Motorhome", "Chirey", "Rickenbacker", "Kaiser", "Skoda", "Pegaso", "Elcar", "Franklin", "NSU", "Diana", "Wolseley", "DKW", "Astra", "Hupmobile", "Bristol", "Evergreen RV", "CitroÃ«n", "Alexander Dennis", "Battle Motors", "Daimler", "Rover", "Fargo", "Cunningham", "Essex", "Rambler", "Wartburg", "Hertz", "Hillman", "American Austin", "Austin", "Blackhawk", "GWM", "Armstrong-Siddeley", "American Bantam", "Lion", "Airstream", "Fisker", "Star", "Nash", "Windsor", "Adventurer MFG", "Talbot-Lago", "Dellow", "Elva", "TVR", "Cleveland", "Frazer Nash", "BYD", "Lucid", "Zacua", "Rivian", "INEOS", "Crosley", "Stutz", "GreenPower Motors", "Davis", "Abarth", "Spyker", "Locomobile", "HRG", "Matra", "Stearns Knight", "Edsel", "ALFA Leisure", "Hispano-Suiza", "Paige", "Jordan", "Utilimaster", "Arnolt-Bristol", "Marcos", "DeSoto", "Jensen", "Moon", "Oakland", "Yellow Cab", "Graham-Paige", "Delahaye", "Chanje", "Maxus", "Healey", "Proterra", "Monteverdi", "Excalibur", "Roamer", "Humber", "Maxwell", "Alpine", "Brightdrop", "Omoda", "East to West", "Stevens-Duryea", "Vauxhall", "Sitrak", "Lloyd", "Pierce-Arrow", "ARRA", "Econoline", "Cole", "Deutsch-Bonnet", "Durant", "Hotchkiss", "Singer", "Jeffery", "Hymer", "Cord", "Fairthorpe", "Alvis", "Bond", "Kurtis", "Panther", "Gardner", "Goliath", "Moretti", "Geely", "Delage", "Marathon", "Facel Vega", "Haval", "Standard", "Glas", "Case", "Isotta Fraschini", "Velie", "Polestar", "Denzel", "Berkeley", "Bestune", "Griffith", "Austin Healey", "DeLorean", "Les Autobus MCI", "Genesis Transit Buses", "Yugo", "Henry J", "Jetour", "LaSalle", "Metropolitan", "Doretti", "Riley", "Maico", "Sabra", "VPG", "Cupra", "JMC", "Panoramic RV", "Turner", "Lanchester", "Frazer", "JIM", "Goggomobil", "Rockne", "Allstate", "FWD", "Ferrara", "VinFast", "Bollinger Motors", "Flint", "Peerless", "Mobility Ventures", "Kissel", "Changan", "Jewett", "Salmson", "Panhard", "Biddle", "Rosenbauer America", "Gordon-Keeble", "Storyteller Overland", "DAF", "Stanguellini", "Apperson", "Dennis Eagle", "Tatra", "Merkur", "Bering", "Maxim", "Think", "GAC", "Dual-Ghia", "Jaecoo", "Darrin", "Duesenberg", "Apollo", "Chandler", "Arnolt-MG", "Western RV", "Mullen", "Scripps Booth", "Du Pont", "Jowett", "Westcott", "Shelby", "HCS", "Messerschmitt", "Bizzarrini", "Nikola", "Falcon Knight", "Antero Adventure Van", "Whippet", "Grand Design", "Duryea", "DFSK", "Stewart & Stevenson", "Savage", "KING LONG", "Omega", "Haynes", "Viking", "SHACMAN", "EarthRoamer", "Zeekr", "Qvale", "Bus & Coach Intl (BCI)", "Osca", "Continental", "Toyopet", "Zundapp", "Irizar", "Saleen", "SsangYong", "Rollin", "Vespa", "Marauder", "Erskine", "Tucker", "Carado", "Lexington", "Skywell", "De Vaux", "Nardi", "Marquette", "Bricklin", "Coda", "Sheridan", "Zeligson", "Swallow", "Roosevelt", "Hansa", "Seres", "Lordstown Motors"]; // put list of Makes here
+
+        function sanitizeColumnNames(colNames) {
+            return colNames.map(name => name.replace(/[|^]/g, ''));
+        }
+
+       function createTableHeaders() {
+            const tableHeaders = columns.map(col => `<th>${col}</th>`).join('');
+            $('#resultTable thead tr').html(tableHeaders);
+        }
+
+        function extractYearAndMakeModel(dataRow) {
+            const [yearRange, makeModel, ...rest] = dataRow.split('\t');
+            if (!yearRange || !makeModel) return null;
+
+            const makeModelParts = makeModel.split('|');
+            const make = makeModelParts[0].trim();
+            const model = makeModelParts[1] ? makeModelParts[1].trim() : '';
+
+            return {
+                yearRange: yearRange.trim(),
+                make: make.toUpperCase(),
+                model: model
+            };
+        }
+
+        function filterData() {
+            const dataInput = document.getElementById('dataInput').value.trim();
+            if (!dataInput) {
+                alert('Please enter the data.');
+                return [];
+            }
+
+            const lines = dataInput.split('\n').map(line => line.trim());
+            let allFilteredData = [];
+            let invalidEntries = [];
+
+            lines.forEach((line, index) => {
+                const parts = line.split('\t');
+                const yearMakeModel = extractYearAndMakeModel(line);
+                const trim = parts[2] || ''; 
+                const engine = parts[3] || ''; 
+                const body = parts[4] || ''; 
+                const driveType = parts[5] || ''; 
+
+                if (!yearMakeModel || !yearMakeModel.make || !yearMakeModel.model) {
+                    invalidEntries.push(`Line ${index + 1}: ${line}`);
+                    return;
+                }
+
+                let yearStart, yearEnd;
+                if (yearMakeModel.yearRange.includes('-')) {
+                    [yearStart, yearEnd] = yearMakeModel.yearRange.split('-').map(year => parseInt(year.trim()));
+                } else {
+                    yearStart = yearEnd = parseInt(yearMakeModel.yearRange.trim());
+                }
+
+                const filteredData = jsonData.filter(row => {
+                    const rowYear = row['Year'] ? parseInt(row['Year']) : '';
+                    const rowMake = row['Make'] ? row['Make'].toUpperCase() : '';
+                    const rowModel = row['Model'] ? row['Model'].toUpperCase() : '';
+                    const rowTrim = row['Trim'] ? row['Trim'].toLowerCase() : '';
+                    const rowEngine = row['Engine'] ? row['Engine'].toLowerCase() : '';
+                    const rowBody = row['Body'] ? row['Body'].toLowerCase() : '';
+                    const rowDriveType = row['Drive Type'] ? row['Drive Type'].toLowerCase() : '';
+
+                    const modelMatch = rowModel === yearMakeModel.model.toUpperCase();
+                    const trimMatch = trim
+                        ? rowTrim === trim.toLowerCase() || rowTrim.startsWith(trim.toLowerCase() + ' ' + rowBody)
+                        : true;
+
+                    const engineTerms = engine.split('|').map(e => e.toLowerCase().trim());
+                    const engineMatch = engineTerms.every(term => rowEngine.includes(term));
+
+                    const bodyMatch = body ? rowBody === body.toLowerCase() : true;
+                    const driveTypeMatch = driveType ? rowDriveType.includes(driveType.toLowerCase()) : true;
+
+                    return rowYear >= yearStart && rowYear <= yearEnd &&
+                        rowMake.includes(yearMakeModel.make) &&
+                        modelMatch &&
+                        trimMatch &&
+                        engineMatch &&
+                        bodyMatch &&
+                        driveTypeMatch;
+                });
+
+                if (filteredData.length === 0) {
+                    invalidEntries.push(`Invalid Input Entry: ${line}`);
+                }
+
+                allFilteredData = allFilteredData.concat(filteredData);
+            });
+
+            if (invalidEntries.length > 0) {
+                alert(`Invalid entries found:\n${invalidEntries.join('\n')}`);
+            } else {
+                alert("Filtering process completed!");
+            }
+
+            return allFilteredData;
+        }
+
+        function createCopyButtons() {
+            const copyButtonsDiv = document.getElementById('copyButtons');
+            copyButtonsDiv.innerHTML = '';
+
+            columns.forEach(col => {
+                const button = document.createElement('button');
+                button.textContent = `Copy ${col}`;
+                button.addEventListener('click', () => copyColumnData(col));
+                copyButtonsDiv.appendChild(button);
+            });
+        }
+
+        function copyColumnData(columnName) {
+            const columnIndex = columns.indexOf(columnName);
+            if (columnIndex === -1) {
+                alert(`Column "${columnName}" not found.`);
+                return;
+            }
+            const table = $('#resultTable').DataTable();
+            const data = table.column(columnIndex).data().toArray().join('\n');
+            navigator.clipboard.writeText(data).then(() => {
+                alert(`Data from column "${columnName}" copied to clipboard.`);
+            }).catch(() => {
+                alert('Failed to copy data to clipboard.');
+            });
+        }
+
+        function saveFileToIndexedDB(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                jsonData = XLSX.utils.sheet_to_json(sheet);
+
+                columns = Object.keys(jsonData[0]);
+                createTableHeaders();
+                createCopyButtons();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                alert('Please upload an Excel file.');
+                return;
+            }
+            saveFileToIndexedDB(file);
+        });
+
+        document.getElementById('searchButton').addEventListener('click', function() {
+            if (!jsonData) {
+                alert('Please upload an Excel file.');
+                return;
+            }
+
+            const filteredData = filterData();
+
+            if ($.fn.dataTable.isDataTable('#resultTable')) {
+                $('#resultTable').DataTable().clear().destroy();
+            }
+
+            $('#resultTable').DataTable({
+                data: filteredData,
+                columns: columns.map(col => ({ title: col, data: col }))
+            });
+        });
+
+        // eBay Master Process Function (Compressor)
+        document.getElementById('processButton').addEventListener('click', function() {
+            const fitmentData = document.getElementById('completeFitmentBox').value.trim();
+            if (!fitmentData) {
+                alert('No data available for processing.');
+                return;
+            }
+
+            const fitmentLines = fitmentData.split('^^').filter(line => line.trim() !== '');
+
+            const compressedData = processEBayFitments(fitmentLines);
+
+            document.getElementById('eBayFitmentBox').value = compressedData.join('^^');
+        });
+
+        function processEBayFitments(fitments) {
+            const fitmentDict = {};
+            fitments.forEach(line => {
+                const parts = line.split('|');
+                const yearRange = parts[0].trim();
+                const key = parts.slice(1).join('|').trim();
+
+                if (!fitmentDict[key]) fitmentDict[key] = [];
+                if (yearRange.includes('-')) {
+                    const [start, end] = yearRange.split('-').map(year => parseInt(year.trim()));
+                    for (let year = start; year <= end; year++) {
+                        fitmentDict[key].push(year);
+                    }
+                } else {
+                    fitmentDict[key].push(parseInt(yearRange));
+                }
+            });
+
+            const processedFitments = [];
+            for (const [key, years] of Object.entries(fitmentDict)) {
+                const mergedYears = mergeYearRanges([...new Set(years)]);
+                mergedYears.forEach(yearRange => {
+                    processedFitments.push(`${yearRange}|${key}`);
+                });
+            }
+
+            return processedFitments;
+        }
+
+        function mergeYearRanges(years) {
+            years.sort((a, b) => a - b);
+            const merged = [];
+            let start = years[0];
+            let end = years[0];
+
+            for (let i = 1; i < years.length; i++) {
+                if (years[i] === end + 1) {
+                    end = years[i];
+                } else {
+                    merged.push(start === end ? `${start}` : `${start}-${end}`);
+                    start = years[i];
+                    end = years[i];
+                }
+            }
+            merged.push(start === end ? `${start}` : `${start}-${end}`);
+            return merged;
+        }
+    </script>
+</body>
+</html>

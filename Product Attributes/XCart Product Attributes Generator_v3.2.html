@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>X-Cart Product Attribute Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #A0A0A0;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      background-color: white;
+      border: 1px solid #cccccc;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      font-family: 'Impact', sans-serif;
+      color: black;
+      font-size: 62.25px;
+      text-shadow: 0 0 10px #ffbb00; /* Dark dandelion color (goldenrod) */
+      margin-top: 0;
+      padding: 10px 0;
+    }
+    .main-content {
+      display: flex;
+    }
+    .input-section {
+      flex: 1;
+      margin-right: 20px;
+    }
+    .entry-section {
+      flex: 1;
+    }
+    textarea, input {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 5px;
+      box-sizing: border-box;
+    }
+    .button-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .button-container button {
+      flex: 1;
+      padding: 9px;
+      background-color: #ffbb00;
+      border: 3px solid #606060;
+      cursor: pointer;
+    }
+    .button-container button:hover {
+      background-color: #D89F00;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 6px;
+      text-align: left;
+    }
+    /* New style for table header */
+    #outputTable thead tr {
+      background-color: #ffbb00; /* Dark dandelion color */
+      color: Black; /* Optional: make text white for better readability */
+    }
+    /* New style for generated table rows */
+    #outputTable tbody tr {
+      background-color: white;
+    }
+  </style>
+</head>
+<body>
+  <!-- Rest of the HTML remains the same as in the previous artifact -->
+  <div class="container">
+    <h1>X-Cart Product Attribute Generator</h1>
+    <div class="main-content">
+      <div class="input-section">
+        <label>Enter SKUs:</label>
+        <textarea id="skuInput" rows="4"></textarea>
+
+        <label>Enter Class:</label>
+        <input type="text" id="classInput">
+
+        <label>Enter Info from Product SKU File:</label>
+        <textarea id="noGroupInput" rows="4"></textarea>
+
+        <label>Enter Info from Product Specs File:</label>
+        <textarea id="groupedInput" rows="4" oninput="filterGroupedInput()"></textarea>
+
+        <div class="button-container">
+          <button onclick="addToEntry()">Add to Entry</button>
+          <button onclick="generateFullResult()">Generate Full Result</button>
+          <button onclick="copyToClipboard()">Copy Results</button>
+          <button onclick="clearAllData()">Clear All</button>
+        </div>
+      </div>
+
+      <div class="entry-section">
+        <label>Current SKUs added as Entry:</label>
+        <textarea id="skuList" rows="10" readonly></textarea>
+      </div>
+    </div>
+
+    <table id="outputTable">
+      <thead>
+        <tr>
+          <th>productSKU</th>
+          <th>type</th>
+          <th>name</th>
+          <th>class</th>
+          <th>group</th>
+          <th>owner</th>
+          <th>value</th>
+          <th>default</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+<script>
+    // Previous JavaScript remains unchanged (from the previous artifact)
+    const groupMapping = {
+      "Position": "Details",
+"Lighting Technology": "Details",
+"Lens Color": "Details",
+"Housing Color": "Details",
+"Color/Finish": "Details",
+"Glass Adjustment Method": "Details",
+"Heated Mirror": "Details",
+"Foldable": "Details",
+"Towing Mirror": "Details",
+"Material": "Details",
+"Surface Finish": "Details",
+"Outer Material": "Details",
+"Product Fit": "Details",
+"Type": "Details",
+"Features": "Details",
+"Universal Fitment": "Details",
+"Recommended Use": "Details",
+"Light Source": "Details",
+"Operation": "Details",
+"Series": "Details",
+"Design": "Details",
+"Finish": "Details",
+"Transmission": "Details",
+"Accessories Included": "Details",
+"Anti-pinch Motor": "Details",
+"Attachment Method": "Details",
+"Automatic Dimming Included": "Details",
+"Back-up Lamp Bulb Included": "Details",
+"Back-up Lamp Bulb Type": "Details",
+"Blind Spot Indicator": "Details",
+"Blind Spot Mirror Included": "Details",
+"Bottom Header": "Details",
+"Brake Lamp Bulb Included": "Details",
+"Brake Lamp Bulb Type": "Details",
+"Built-in Dryer": "Details",
+"Built-in Oil Cooler": "Details",
+"Built-in Receiver/dryer": "Details",
+"Bulb Type": "Details",
+"Bulbs Included": "Details",
+"California Proposition 65": "Compliance",
+"Cfm Type": "Details",
+"Components Included": "Details",
+"Configuration": "Details",
+"Connector Pins Qty On Main Connector": "Details",
+"Connector Quantity": "Details",
+"Connector Terminal Quantity": "Details",
+"Connector Type": "Details",
+"Control Module": "Details",
+"Cooler Included": "Details",
+"Core Height": "Dimension",
+"Core Length": "Dimension",
+"Core Size": "Dimension",
+"Core Thickness": "Dimension",
+"Cornering Lamp Bulb Type": "Dimension",
+"Cornering Lamp Included": "Dimension",
+"Current": "Dimension",
+"Daytime Running Light Bulb Included": "Dimension",
+"Daytime Running Light Bulb Type": "Dimension",
+"Energy Output": "Dimension",
+"Engine Oil Cooler Fittings Distance Apart": "Dimension",
+"Engine Oil Cooler Included": "Dimension",
+"Engine Oil Cooler Inlet Fitting Gender": "Dimension",
+"Engine Oil Cooler Outlet Fitting Gender": "Dimension",
+"Engine Oil Cooler Type": "Dimension",
+"Eoc Distance": "Dimension",
+"Eoc Inlet Diameter": "Dimension",
+"Eoc Inlet Type": "Details",
+"Eoc Outlet Diameter": "Dimension",
+"Eoc Outlet Type": "Details",
+"Fan Blade Material": "Details",
+"Fan Type": "Details",
+"Fin Count": "Dimension",
+"Fin Height": "Dimension",
+"Fin Wave Height": "Dimension",
+"Find Wave Pitch": "Details",
+"Flow Configuration": "Details",
+"Fog Light Bulb Included": "Details",
+"Fog Light Bulb Type": "Details",
+"Front Side Marker Light Bulb Included": "Details",
+"Front Side Marker Light Bulb Type": "Details",
+"Front Signal Light Bulb Included": "Details",
+"Front Signal Light Bulb Type": "Details",
+"Glass Type": "Details",
+"Hardware Included": "Details",
+"Housing Material": "Details",
+"Inlet Connection Type": "Details",
+"Inlet Diameter": "Dimension",
+"Inlet Fitting Design": "Details",
+"Inlet Size": "Dimension",
+"Installation Instructions Included": "Details",
+"Lens Material": "Details",
+"Manual Remote": "Details",
+"Memory": "Details",
+"Mirror Turn Signal Indicator": "Details",
+"Mirror Type": "Details",
+"Motor Included": "Details",
+"Motor Type": "Details",
+"Mounting Position": "Details",
+"No. Of Rows": "Details",
+"Noise": "Details",
+"Notes 1": "Notes",
+"Notes 2": "Notes",
+"Notes 3": "Notes",
+"Oe Manufacturer": "Details",
+"One Touch": "Details",
+"Other Side": "Details",
+"Outlet Connection Type": "Details",
+"Outlet Diameter": "Dimension",
+"Outlet Fitting Design": "Details",
+"Outlet Size": "Dimension",
+"Package Contents": "Details",
+"Park Lamp Bulb Included": "Details",
+"Park Lamp Bulb Type": "Details",
+"Power": "Details",
+"Product Color": "Details",
+"Puddle Light Included": "Details",
+"Rear Fog Lamp Bulb Included": "Details",
+"Rear Fog Lamp Bulb Type": "Details",
+"Rear Side Marker Lamp Bulb Included": "Details",
+"Rear Side Marker Lamp Bulb Type": "Details",
+"Rear Turn Signal Bulb Included": "Details",
+"Rear Turn Signal Bulb Type": "Details",
+"Regulator Position": "Details",
+"Remarks": "Details",
+"Rotation Direction": "Details",
+"Rows": "Dimension",
+"Shroud Included": "Details",
+"Shroud Material": "Details",
+"Side Repeater Light Bulb Type": "Details",
+"Side Repeater Light Included": "Details",
+"Side View Camera Included": "Details",
+"Stall Speed Rpm": "Details",
+"Tail Lamp Bulb Included": "Details",
+"Tail Lamp Bulb Type": "Details",
+"Tank Material": "Details",
+"Toc Distance": "Dimension",
+"Toc Inlet Diameter": "Dimension",
+"Toc Inlet Fitting Design": "Details",
+"Toc Inlet Type": "Details",
+"Toc Outlet Diameter": "Dimension",
+"Toc Outlet Fitting Design": "Details",
+"Toc Outlet Type": "Details",
+"Top Header": "Details",
+"Total Fin Row Count": "Details",
+"Total Tube Count": "Details",
+"Transmission Oil Cooler Distance Between Fittings": "Details",
+"Transmission Oil Cooler Included": "Details",
+"Transmission Oil Cooler Type": "Details",
+"Tube Count": "Dimension",
+"Tube Width X Height": "Dimension",
+"Mounting Type": "Details",
+"Upper Temperature Rating": "Details",
+"Measuring Range": "Details",
+"Style Name": "Details",
+"TPMS Sensor Type": "Details",
+"TPMS Sensor Frequency": "Details",
+"Voltage": "Details",
+"Fuel Level Sensor Resitance Range": "Details",
+"Fuel Tank Gasket Included": "Details",
+"Fuel Tube Connection Type": "Details",
+"Gph": "Details",
+"Maximum Air Pressure": "Details",
+"Strainer Included": "Details",
+"Driving Light Bulb Included": "Details",
+"Driving Light Bulb Type": "Details",
+"High Beam Bulb Included": "Details",
+"High Beam Bulb Type": "Details",
+"Low Beam Bulb Included": "Details",
+"Low Beam Bulb Type": "Details",
+"Sae/dot Compliant": "Details",
+"Hid Ballast Included": "Details",
+"Afs Motor": "Details",
+"Auto-lever Motor": "Details",
+"Led Controller Included": "Details",
+"LED Headlight Control Module": "Details",
+"Clearance Lamp Bulb Included": "Details",
+"Clearance Lamp Bulb Type": "Details",
+"W/ Cover": "Details",
+"W/ Socket": "Details",
+"Fan Position": "Details",
+"Power Generation": "Details",
+"Pully Wheel Design": "Details",
+"Pully Wheel Grooves": "Details"
+    };
+
+    let storedEntries = [];
+    let skuSet = new Set();
+
+    function filterGroupedInput() {
+      let input = document.getElementById("groupedInput").value.trim();
+      let lines = input.split("\n");
+
+      if (lines.length !== 2) return;
+
+      let headers = lines[0].split("\t");
+      let values = lines[1].split("\t");
+
+      let filteredHeaders = [];
+      let filteredValues = [];
+
+      for (let i = 0; i < headers.length; i++) {
+        if (values[i] && values[i].trim() !== "") {
+          filteredHeaders.push(headers[i].trim());
+          filteredValues.push(values[i].trim());
+        }
+      }
+
+      document.getElementById("groupedInput").value =
+        filteredHeaders.join("\t") + "\n" + filteredValues.join("\t");
+    }
+
+    function addToEntry() {
+      let skuLines = document.getElementById("skuInput").value.trim().split("\n").map(s => s.trim());
+      let uniqueSkus = [...new Set(skuLines)];
+      let className = document.getElementById("classInput").value.trim();
+      let noGroupLines = document.getElementById("noGroupInput").value.trim().split("\n");
+      let groupedLines = document.getElementById("groupedInput").value.trim().split("\n");
+
+      if (!className) {
+        alert("Class name is required.");
+        return;
+      }
+
+      if (groupedLines.length !== 2) {
+        alert("Error: Grouped input must have exactly two lines.");
+        return;
+      }
+
+      uniqueSkus.forEach(sku => {
+        if (!skuSet.has(sku)) {
+          skuSet.add(sku);
+          storedEntries.push({ sku, className, noGroupLines, groupedLines });
+        }
+      });
+
+      updateSkuList();
+      document.getElementById("skuInput").value = "";
+      document.getElementById("classInput").value = "";
+      document.getElementById("noGroupInput").value = "";
+      document.getElementById("groupedInput").value = "";
+    }
+
+    function updateSkuList() {
+      document.getElementById("skuList").value = Array.from(skuSet).join("\n");
+    }
+
+    function generateFullResult() {
+      let tbody = document.getElementById("outputTable").querySelector("tbody");
+      tbody.innerHTML = "";
+
+      storedEntries.forEach(({ sku, className, noGroupLines, groupedLines }) => {
+        noGroupLines.forEach(line => {
+          let parts = line.split("\t");
+          if (parts.length !== 2) return;
+          let name = parts[0].trim();
+          let value = parts[1].trim();
+          let row = `<tr><td>${sku}</td><td>T</td><td>${name}</td><td>${className}</td><td></td><td>Yes</td><td>${value}</td><td>Yes</td></tr>`;
+          tbody.innerHTML += row;
+        });
+
+        let groupedNames = groupedLines[0].split("\t");
+        let groupedValues = groupedLines[1].split("\t");
+
+        groupedNames.forEach((name, index) => {
+          let value = groupedValues[index]?.trim() || "";
+          let group = groupMapping[name.trim()] || "";
+          let row = `<tr><td>${sku}</td><td>T</td><td>${name.trim()}</td><td>${className}</td><td>${group}</td><td>No</td><td>${value}</td><td>No</td></tr>`;
+          tbody.innerHTML += row;
+        });
+      });
+    }
+
+    function copyToClipboard() {
+      let table = document.getElementById("outputTable");
+      let rows = table.getElementsByTagName("tr");
+      let textToCopy = "";
+
+      for (let i = 1; i < rows.length; i++) {
+        let cols = rows[i].getElementsByTagName("td");
+        let rowText = Array.from(cols).map(col => col.textContent.trim()).join("\t");
+        textToCopy += rowText + "\n";
+      }
+
+      if (!textToCopy.trim()) {
+        alert("No data to copy!");
+        return;
+      }
+
+      navigator.clipboard.writeText(textToCopy.trim()).then(() => {
+        alert("Results copied to clipboard!");
+      }).catch(err => {
+        console.error("Clipboard copy failed: ", err);
+        alert("Failed to copy results.");
+      });
+    }
+
+    function clearAllData() {
+      const confirmClear = confirm("Are you sure you want to clear all data? This will remove all entries and reset the table.");
+      
+      if (confirmClear) {
+        storedEntries = [];
+        skuSet.clear();
+
+        document.getElementById("skuInput").value = "";
+        document.getElementById("classInput").value = "";
+        document.getElementById("noGroupInput").value = "";
+        document.getElementById("groupedInput").value = "";
+        document.getElementById("skuList").value = "";
+
+        document.getElementById("outputTable").querySelector("tbody").innerHTML = "";
+
+        alert("All data has been cleared.");
+      }
+    }
+
+    window.addEventListener("beforeunload", function (e) {
+      if (storedEntries.length > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+  </script>
+</body>
+</html>
