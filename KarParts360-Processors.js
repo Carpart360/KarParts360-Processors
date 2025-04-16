@@ -300,6 +300,12 @@ app.get('/', isAuthenticated, (req, res) => {
           overflow: hidden;
           background: #EAEAEA;
         }
+	.top-bar img:hover,
+	.footer img:hover,
+	.search-container img:hover {
+  		box-shadow: 0 0 10px #FDB819;
+  		transition: box-shadow 0.3s ease-in-out;
+	}
         /* Top Bar */
         .top-bar {
           display: flex;
