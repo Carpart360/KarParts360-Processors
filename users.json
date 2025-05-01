@@ -1,0 +1,14 @@
+{
+  "BlazingArcher": {
+    "name": "BlazingArcher",
+    "email": "blazing@example.com",
+    "password": "123456",
+    "createdAt": "2025-05-01T10:00:00.000Z"
+  },
+  "DeadlyAssassin": {
+    "name": "DeadlyAssassin",
+    "email": "deadly@example.com",
+    "password": "246810",
+    "createdAt": "2025-05-01T10:00:00.000Z"
+  }
+}

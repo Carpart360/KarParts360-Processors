@@ -10,8 +10,8 @@ LOGO AND MAIN HEADER SETTINGS
     .main-header {
       font-family: Arial Black, sans-serif;
       font-size: 2.75em;
-      color: #ffbb00; /* Fill color */
-      -webkit-text-stroke: 1.5px #404040; /* Outline color */
+      color: #FDB819; /* Fill color */
+      -webkit-text-stroke: 1.5px #212121; /* Outline color */
       letter-spacing: 0.05em;
       text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
       margin-top: 20px;
