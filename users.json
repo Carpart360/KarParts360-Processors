@@ -10,17 +10,5 @@
     "email": "deadly@example.com",
     "password": "246810",
     "createdAt": "2025-05-01T10:00:00.000Z"
-  },
-  "JnwlSbstn": {
-    "email": "janwel.josh@gmail.com",
-    "name": "Janwel Sebastian",
-    "password": "ezioauditore0825",
-    "createdAt": "2025-05-01T00:33:11.291Z"
-  },
-  "JANWEL": {
-    "email": "josh.janwel@gmail.com",
-    "name": "Janwel Sebastian",
-    "password": "123456789",
-    "createdAt": "2025-05-01T00:35:16.546Z"
   }
 }
